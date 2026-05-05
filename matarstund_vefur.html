@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Bodoni+Moda:opsz,wght@6..96,700&display=swap" rel="stylesheet">
+<style>
+:root{--r:#D81E30;--c:#FDF8E2;--g:#39552C;--s:rgba(57,85,44,.06)}
+*{box-sizing:border-box}
+body{font-family:Manrope,Arial,sans-serif;background:var(--c);margin:0;color:#222}
+body::after{content:"";position:fixed;right:-80px;top:50%;transform:translateY(-50%);width:320px;height:320px;opacity:.16;background:url('https://cdn.shopify.com/s/files/1/0707/1458/9322/files/Matarstund_Icon_green_orange.svg?v=1754057827') no-repeat center/contain;pointer-events:none;z-index:0}
+.hero{position:relative;z-index:10;padding:14px 12px 8px;text-align:center}
+.bl{max-width:1040px;margin:0 auto;display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
+.pill{border:2px solid var(--r);color:var(--r);background:transparent;padding:10px 18px;border-radius:999px;font-weight:700;cursor:pointer;transition:.18s}
+.pill.on,.pill:hover{background:var(--r);color:#fff}
+.days{display:none;gap:12px;justify-content:center;flex-wrap:wrap;margin:8px auto 14px;position:relative;z-index:1}
+.db{background:var(--c);color:var(--g);border:2px solid var(--r);border-radius:18px;padding:10px 18px;min-width:140px;font-weight:700;cursor:pointer;transition:.18s}
+.db:hover,.db.on{background:var(--r);color:#fff}
+.card{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:0 18px 8px}
+.dh{display:flex;gap:10px;align-items:baseline;justify-content:center;margin:8px 0 14px}
+.dt{font-family:"Bodoni Moda",serif;color:var(--r);font-size:56px;margin:0;text-transform:uppercase}
+.dd{color:var(--r);font-weight:600;font-size:18px}
+.band{background:var(--s);padding:20px;border:2px solid var(--r);border-radius:24px;margin:14px 0}
+.bt{display:flex;align-items:center;gap:10px;color:var(--r);font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin:0 0 10px}
+.bt img{width:20px;height:20px}
+.lbl{font-weight:500;font-size:14px;color:#111;margin:8px 0 4px}
+.itm{font-size:18px;margin-bottom:4px}
+.ck{cursor:pointer;color:var(--g);font-weight:700;padding:2px 4px;border-radius:8px;text-decoration:underline dotted;text-underline-offset:2px}
+.ck::before{content:"";display:inline-block;width:20px;height:20px;margin-right:6px;border-radius:999px;border:1px solid currentColor;background:url('https://cdn.shopify.com/s/files/1/0707/1458/9322/files/Matarstund_Icon_green_orange.svg?v=1754057827') no-repeat center/contain;vertical-align:middle}
+.ck:hover{background:#e9f3ea}
+.hint{max-width:980px;margin:0 auto 8px;padding:0 18px;font-size:14px;color:#39552C;display:none;align-items:center;gap:6px}
+.act{display:flex;justify-content:center;margin:18px 0 28px}
+.btn{background:#fff;border:2px solid var(--r);color:var(--r);padding:10px 16px;border-radius:12px;font-weight:700;cursor:pointer}
+.btn:hover{background:var(--r);color:#fff}
+.modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5)}
+.modal.on{display:block}
+.mc{background:#fffefc;margin:60px auto;padding:30px;border-radius:18px;width:90%;max-width:800px;max-height:90vh;overflow:hidden;box-shadow:0 0 30px rgba(0,0,0,.2)}
+.ms{max-height:70vh;overflow-y:auto;padding-right:10px}
+.cx{float:right;font-size:24px;cursor:pointer;color:#888}
+.cx:hover{color:#333}
+.mt{color:var(--g);font-size:26px;font-weight:700;margin:0 0 20px}
+.vb{background:#fff8f1;border-left:5px solid #FF7D39;padding:16px;border-radius:12px;margin-bottom:14px}
+.vn{font-weight:700;font-size:16px;margin-bottom:4px}
+.vm{font-size:13px;color:#888;margin-bottom:6px}
+.vi{font-size:14px;margin-bottom:6px}
+.vo{font-size:14px;color:#C0392B;font-weight:600}
+.nt{width:100%;border-collapse:collapse;margin-top:16px}
+.nt th,.nt td{border:1px solid #ddd;padding:10px;text-align:left;font-size:15px}
+.nt th{background:var(--g);color:#fff;text-transform:uppercase;letter-spacing:.5px;font-size:13px}
+.nt tr:nth-child(even) td{background:#f9f9f9}
+.nn{background:#fff6f6;border-left:4px solid #e0e0e0;padding:12px 16px;border-radius:8px;color:#888;font-size:14px;margin-top:12px}
+.sb{background:#fff3e0;border-left:4px solid #ff9800;padding:12px 16px;border-radius:12px;margin-bottom:14px;font-weight:600}
+.ld{text-align:center;padding:40px;color:#888}
+</style>
+</head>
+<body>
+<header class="hero"><div class="bl">
+<button id="bL" class="pill" onclick="sel('Leikskóli')">LEIKSKÓLI</button>
+<button id="bG" class="pill" onclick="sel('Grunnskóli')">GRUNNSKÓLI</button>
+</div></header>
+<nav class="days" id="dn">
+<button class="db" onclick="sd('Mánudagur')">Mánudagur</button>
+<button class="db" onclick="sd('Þriðjudagur')">Þriðjudagur</button>
+<button class="db" onclick="sd('Miðvikudagur')">Miðvikudagur</button>
+<button class="db" onclick="sd('Fimmtudagur')">Fimmtudagur</button>
+<button class="db" onclick="sd('Föstudagur')">Föstudagur</button>
+</nav>
+<main class="card" id="mn"></main>
+<p class="hint" id="ht"><span style="display:inline-block;width:20px;height:20px;border-radius:999px;border:1px solid currentColor;background:url('https://cdn.shopify.com/s/files/1/0707/1458/9322/files/Matarstund_Icon_green_orange.svg?v=1754057827') no-repeat center/contain"></span> Smelltu á rétt til að sjá innihaldslýsingu og ofnæmisvalda.</p>
+<div class="act"><button class="btn" onclick="vm()">📄 Sækja vikumatseðil</button></div>
+<section id="wm" style="display:none;background:#fff;padding:30px;border-radius:16px;max-width:900px;margin:10px auto"></section>
+<div id="md" class="modal"><div class="mc"><span class="cx" onclick="cm()">×</span><div id="mb" class="ms"></div></div></div>
+<script>
+const SID='1lA08edOsLDjpHZy1Y0Bsj1E-fpfdzzyWygah4C_J8r8';
+const HT='https://cdn.shopify.com/s/files/1/0707/1458/9322/files/Matarstund_Icon_green_orange.svg?v=1754057827';
+const MI=['janúar','febrúar','mars','apríl','maí','júní','júlí','ágúst','september','október','nóvember','desember'];
+const DN={1:'Mánudagur',2:'Þriðjudagur',3:'Miðvikudagur',4:'Fimmtudagur',5:'Föstudagur'};
+const NK=['Orka (kcal/100g)','Fita (g/100g)','Mettuð fita (g/100g)','Kolvetni (g/100g)','Sykur (g/100g)','Prótein (g/100g)','Salt (g/100g)','Trefjar (g/100g)'];
+const NL=['Orka (kcal)','Fita','Mettuð fita','Kolvetni','Sykur','Prótein','Salt','Trefjar'];
+const NU=['kcal','g','g','g','g','g','g','g'];
+let sk=null,dg='',mr=[],rb=[],vs=[];
+const e=s=>(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const n=s=>(s||'').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const c=s=>(s||'').toString().trim();
+function cu(sh){return'https://docs.google.com/spreadsheets/d/'+SID+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent(sh)+'&_cb='+Date.now()}
+async function fc(sh){
+  const t=await fetch(cu(sh)).then(r=>r.text());
+  const p=Papa.parse(t,{header:true,skipEmptyLines:true});
+  const rows=p.data||[];
+  if(p.meta&&p.meta.fields){p.meta.fields.forEach(f=>{
+    [['Dagsetning'],['Heiti réttar'],['Heiti vöru']].forEach(([m])=>{if(f!==m&&f.includes(m))rows.forEach(r=>{r[m]=r[f]});});
+  });}
+  return rows;
+}
+function pd(s){
+  if(!s)return null;
+  const t=s.toString().trim();
+  let m=t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m){const d=new Date(+m[3],+m[1]-1,+m[2]);d.setHours(0,0,0,0);return d;}
+  m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m){const d=new Date(+m[1],+m[2]-1,+m[3]);d.setHours(0,0,0,0);return d;}
+  return null;
+}
+function iw(d){const dt=new Date(d);dt.setHours(0,0,0,0);dt.setDate(dt.getDate()+3-((dt.getDay()+6)%7));const w=new Date(dt.getFullYear(),0,4);return 1+Math.round(((dt-w)/86400000-3+((w.getDay()+6)%7))/7)}
+function vw(){const t=new Date();t.setHours(0,0,0,0);const n=new Date(t);n.setDate(t.getDate()+7);return new Set([iw(t),iw(n)])}
+function dn(d){return DN[d.getDay()]||null}
+function fd(d){return d.getDate()+'. '+MI[d.getMonth()]+' '+d.getFullYear()}
+const CK='mt_v3';
+function sc(){try{localStorage.setItem(CK,JSON.stringify({ts:Date.now(),mr,rb,vs}))}catch(e){}}
+function lc(){try{return JSON.parse(localStorage.getItem(CK)||'null')}catch(e){return null}}
+async function ld(){
+  const[ms,r,v]=await Promise.all([fc('Matseðill'),fc('Réttabanki'),fc('Vöruskrá')]);
+  mr=ms.map(x=>({...x,_d:pd(x['Dagsetning'])})).filter(x=>x._d);
+  rb=r;vs=v;sc();
+}
+async function lds(){try{await ld()}catch(ex){const c=lc();if(c){mr=c.mr||[];rb=c.rb||[];vs=c.vs||[]}}}
+function gvr(s){const w=vw();return mr.filter(r=>{if(!w.has(iw(r._d)))return false;const g=c(r['Gildir fyrir']);return g==='Bæði'||g===s})}
+function fv(nm){return vs.find(v=>n(v['Heiti vöru'])===n(nm))||null}
+function fr(nm){return rb.find(r=>n(r['Heiti réttar'])===n(nm))||null}
+function gvr2(nm){
+  const ret=fr(nm);if(!ret)return[];
+  const out=[];
+  for(let i=1;i<=10;i++){const vn=c(ret['Vara '+i]),mg=parseFloat(ret['Magn '+i+' (g)']||0)||0;if(vn)out.push({nafn:vn,magn:mg,vara:fv(vn)})}
+  return out;
+}
+function nv(va,k){return parseFloat((va[k]||'').toString().replace(',','.'))||null}
+function rn(vorur,sk){
+  const h=vorur.reduce((s,v)=>s+(v.magn||0),0);if(h<=0)return null;
+  const p={},q={};
+  NK.forEach(k=>{let t=0,f=false;vorur.forEach(v=>{if(!v.vara)return;const x=nv(v.vara,k);if(x!==null){t+=x*(v.magn/h);f=true}});p[k]=f?Math.round(t*10)/10:null;q[k]=sk>0&&p[k]!==null?Math.round(p[k]*sk/100*10)/10:null});
+  return{p,q,sk};
+}
+function nb(va,sk){
+  const p={},q={};
+  NK.forEach(k=>{p[k]=nv(va,k);q[k]=sk>0&&p[k]!==null?Math.round(p[k]*sk/100*10)/10:null});
+  return{p,q,sk};
+}
+function nt(ner){
+  if(!ner||!NK.some(k=>ner.p[k]!==null))return'<div class="nn">Engin næringargildi skráð.</div>';
+  const hd=ner.sk>0?'Í skammti ('+ner.sk+'g)':'Í skammti';
+  return'<table class="nt"><thead><tr><th>Næringargildi</th><th>'+e(hd)+'</th><th>100g</th></tr></thead><tbody>'+NK.map((k,i)=>'<tr><td>'+NL[i]+'</td><td>'+(ner.q[k]!==null?ner.q[k]+' '+NU[i]:'—')+'</td><td>'+(ner.p[k]!==null?ner.p[k]+' '+NU[i]:'—')+'</td></tr>').join('')+'</tbody></table>';
+}
+function om(html){document.getElementById('mb').innerHTML=html;document.getElementById('md').classList.add('on')}
+function cm(){document.getElementById('md').classList.remove('on')}
+function si(nm,tg,sk){
+  let h='<h2 class="mt">'+e(nm)+'</h2>';
+  if(n(tg)==='vara'){
+    const v=fv(nm);
+    if(v){h+='<div class="vb"><div class="vi"><strong>Innihaldslýsing:</strong> '+e(c(v['Innihaldslýsing'])||'—')+'</div><div class="vo">⚠️ Ofnæmisvaldar: '+e(c(v['Ofnæmisvaldar'])||'Engir skráðir')+'</div></div>'+nt(nb(v,sk));}
+    else h+='<div class="vb">Engar upplýsingar skráðar.</div>';
+  }else{
+    const vo=gvr2(nm);
+    if(vo.length){
+      vo.forEach(v=>{h+='<div class="vb"><div class="vn">'+e(v.nafn)+'</div>'+(v.magn?'<div class="vm">Magn: '+v.magn+'g</div>':'');if(v.vara){h+='<div class="vi"><strong>Innihaldslýsing:</strong> '+e(c(v.vara['Innihaldslýsing'])||'—')+'</div><div class="vo">⚠️ Ofnæmisvaldar: '+e(c(v.vara['Ofnæmisvaldar'])||'Engir skráðir')+'</div>'}else{h+='<div class="vi" style="color:#aaa">Vara finnst ekki í Vöruskrá</div>'}h+='</div>'});
+      h+=nt(rn(vo,sk));
+    }else{
+      const v=fv(nm);
+      if(v)h+='<div class="vb"><div class="vi"><strong>Innihaldslýsing:</strong> '+e(c(v['Innihaldslýsing'])||'—')+'</div><div class="vo">⚠️ Ofnæmisvaldar: '+e(c(v['Ofnæmisvaldar'])||'Engir skráðir')+'</div></div>'+nt(nb(v,sk));
+      else h+='<div class="vb">Engar upplýsingar skráðar.</div>';
+    }
+  }
+  om(h);
+}
+function bn(r){return c(r['Birtingarnafn'])||c(r['Réttur / Vara'])}
+function rd(r,sk){
+  const bn2=bn(r),un=c(r['Réttur / Vara']),tg=c(r['Tegund'])||'Réttur';
+  if(!bn2)return'<span>—</span>';
+  return'<span class="ck" onclick="si('+JSON.stringify(un)+','+JSON.stringify(tg)+','+Number(sk||0)+')" title="Smelltu">'+e(bn2)+'</span>';
+}
+function sd(d){dg=d;document.querySelectorAll('.db').forEach(b=>b.classList.toggle('on',b.textContent===d));rm()}
+function rm(){
+  const el=document.getElementById('mn');
+  if(!sk||!dg){el.innerHTML='';return}
+  const vr=gvr(sk);
+  const dr=vr.filter(r=>dn(r._d)===dg);
+  // Athugasemd — leita í öllum línum þessa dags (óháð skólasíu)
+  const allToday=mr.filter(r=>dn(r._d)===dg&&iw(r._d)&&vw().has(iw(r._d)));
+  const serd=allToday.find(r=>n(r['Máltíðartegund'])===n('Athugasemd'));
+  const st=serd?(c(serd['Sérdagur / athugasemd'])||c(serd['Birtingarnafn'])||c(serd['Réttur / Vara'])):'';
+  const sh=st?'<div class="sb">📢 '+e(st)+'</div>':'';
+  if(!dr.length&&!sh){el.innerHTML='<p style="text-align:center;padding:20px;color:#888">Engar skráðar máltíðir þennan dag.</p>';document.getElementById('ht').style.display='none';return}
+  const skk=sk==='Leikskóli'?'Skammtur Leikskóli (g)':'Skammtur Grunnskóli (g)';
+  const gt=t=>dr.filter(r=>n(r['Máltíðartegund'])===n(t));
+  const rr=rows=>rows.length?rows.map(r=>'<div class="itm">'+rd(r,parseFloat(r[skk]||0)||0)+'</div>').join(''):'<div class="itm" style="color:#aaa">—</div>';
+  const av=gt('Ávaxtastund');
+  const fh=av.length?'<section class="band"><h3 class="bt"><img src="'+HT+'" alt="">Ávaxtastund</h3>'+rr(av)+'</section>':'';
+  const dt=dr.length?dr[0]._d:null;
+  el.innerHTML='<div class="dh"><h1 class="dt">'+e(dg.toUpperCase())+'</h1>'+(dt?'<span class="dd">('+e(fd(dt))+')</span>':'')+'</div>'+sh+fh+'<section class="band"><h3 class="bt"><img src="'+HT+'" alt="">Hádegismatur</h3><div class="lbl">Aðalréttur</div>'+rr(gt('Aðalréttur'))+'<div class="lbl">Hliðarréttur</div>'+rr(gt('Hliðarréttur'))+'<div class="lbl">Meðlæti</div>'+rr(gt('Meðlæti'))+'</section><section class="band"><h3 class="bt"><img src="'+HT+'" alt="">Síðdegisstund</h3>'+rr(gt('Síðdegishressing'))+'</section>';
+  document.getElementById('ht').style.display='flex';
+}
+async function sel(t){
+  sk=t;
+  document.getElementById('bL').classList.toggle('on',t==='Leikskóli');
+  document.getElementById('bG').classList.toggle('on',t==='Grunnskóli');
+  document.getElementById('dn').style.display='flex';
+  document.getElementById('mn').innerHTML='<div class="ld">Hleður matseðli...</div>';
+  await lds();
+  sd(dn(new Date())||'Mánudagur');
+  if(!window._rt)window._rt=setInterval(async()=>{if(!sk)return;try{await ld();rm()}catch(ex){}},5*60*1000);
+}
+function vm(){
+  if(!sk||!mr.length){alert('Veldu fyrst leikskóla eða grunnskóla.');return}
+  const vr=gvr(sk),dagar=['Mánudagur','Þriðjudagur','Miðvikudagur','Fimmtudagur','Föstudagur'];
+  let h='<h2 style="color:#39552c;text-align:center;margin-bottom:20px">MATSEÐILL VIKUNNAR</h2>';
+  dagar.forEach(d=>{
+    const dr=vr.filter(r=>dn(r._d)===d);if(!dr.length)return;
+    const gt=t=>dr.filter(r=>n(r['Máltíðartegund'])===n(t)).map(r=>e(bn(r))).filter(Boolean).join(', ');
+    h+='<h3 style="color:#ff7d39">'+d.toUpperCase()+' ('+fd(dr[0]._d)+')</h3><p><strong>Ávaxtastund:</strong> '+gt('Ávaxtastund')+'</p><p><strong>Aðalréttur:</strong> '+gt('Aðalréttur')+'</p><p><strong>Hliðarréttur:</strong> '+gt('Hliðarréttur')+'</p><p><strong>Meðlæti:</strong> '+gt('Meðlæti')+'</p><p><strong>Síðdegisstund:</strong> '+gt('Síðdegishressing')+'</p><hr style="margin:16px 0">';
+  });
+  const w=document.getElementById('wm');w.innerHTML=h;w.style.display='block';
+  html2canvas(w).then(cv=>{const a=document.createElement('a');a.download='vikumatseðill.jpg';a.href=cv.toDataURL('image/jpeg',1.0);a.click();w.style.display='none'});
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('dn').style.display='none';
+  document.getElementById('ht').style.display='none';
+  document.getElementById('mn').innerHTML='<p style="text-align:center;margin-top:24px;color:#888">Veldu Leikskóla eða Grunnskóla til að sjá matseðil.</p>';
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')cm()});
+  document.getElementById('md').addEventListener('click',e=>{if(e.target===document.getElementById('md'))cm()});
+});
+</script>
+</body>
+</html>
