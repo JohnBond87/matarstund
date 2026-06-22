@@ -322,7 +322,7 @@ function findBarn(wb, id){
   var idNm=nm(id); // Normalize leitarorðið
   for(var si=0;si<sheets.length;si++){
     var rows=sheetRows(wb,sheets[si]);
-    for(var r=1;r<rows.length;r++){
+    for(var r=3;r<rows.length;r++){
       var nafn=cl(rows[r][1]);
       if(!nafn) continue;
       // Foreldrahlekkur - skoða hvort id sé í honum (normalized samanburður)
