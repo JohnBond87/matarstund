@@ -319,14 +319,16 @@ function findVora(name){
 function findBarn(wb, id){
   var sheets=['Nemendaskrá — Grunnskólar','Nemendaskrá — Leikskólar'];
   var teg=['gs','ls'];
+  var idNm=nm(id); // Normalize leitarorðið
   for(var si=0;si<sheets.length;si++){
     var rows=sheetRows(wb,sheets[si]);
     for(var r=1;r<rows.length;r++){
       var nafn=cl(rows[r][1]);
       if(!nafn) continue;
-      // Foreldrahlekkur - skoða hvort id sé í honum
-      var hlekkur=cl(rows[r][teg[si]==='gs'?9:7]);
-      if(hlekkur&&hlekkur.indexOf(id)>=0){
+      // Foreldrahlekkur - skoða hvort id sé í honum (normalized samanburður)
+      var hlekkColIdx = teg[si]==='gs'?9:7;
+      var hlekkur=cl(rows[r][hlekkColIdx]);
+      if(hlekkur&&nm(hlekkur).indexOf(idNm)>=0){
         if(teg[si]==='gs'){
           return{nafn:nafn,skoli:cl(rows[r][0]),deild:cl(rows[r][2]),
             ofnaemi:cl(rows[r][6]),athugasemd:cl(rows[r][7]),
