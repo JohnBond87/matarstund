@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Bodoni+Moda:opsz,wght@6..96,700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#D81E30;--cream:#FDF8E2;--green:#39552C;--soft:rgba(57,85,44,.06);}
+*{box-sizing:border-box;}
+body{font-family:Manrope,Arial,sans-serif;background:var(--cream);margin:0;color:#222;}
+
+.hero{padding:20px 18px 8px;text-align:center;}
+.skoli-kort{max-width:800px;margin:0 auto 16px;background:var(--green);color:white;border-radius:20px;padding:20px 24px;}
+.skoli-nafn{font-size:24px;font-weight:700;margin-bottom:4px;}
+.skoli-sub{font-size:14px;opacity:.8;}
+
+/* DAGAVAL */
+.days{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:8px auto 16px;max-width:980px;padding:0 18px;}
+.daybtn{background:var(--cream);color:var(--green);border:2px solid var(--red);border-radius:18px;padding:10px 18px;min-width:130px;font-weight:700;cursor:pointer;transition:.18s;font-family:inherit;}
+.daybtn:hover,.daybtn.active{background:var(--red);color:#fff;}
+.weekdropdown{position:relative;display:inline-block;}
+.weektrigger{border:2px solid var(--red);color:var(--red);background:var(--cream);padding:10px 18px;border-radius:999px;font-weight:700;cursor:pointer;font-family:inherit;min-width:170px;}
+.weektrigger:hover,.weektrigger.open{background:var(--red);color:#fff;}
+.weekmenu{display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);min-width:310px;background:#fffefc;border:2px solid var(--red);border-radius:18px;box-shadow:0 10px 24px rgba(0,0,0,.18);z-index:50;overflow:hidden;}
+.weekmenu.open{display:block;}
+.weekoption{padding:12px 16px;cursor:pointer;color:var(--green);font-weight:700;font-family:inherit;}
+.weekoption:hover{background:#fff3e0;}
+.weekoption.active{background:rgba(57,85,44,.08);color:var(--red);}
+.weekcheck{display:inline-block;width:22px;color:var(--red);font-weight:700;}
+
+/* AÐALRÉTTUR ÞENNAN DAG */
+.card{max-width:980px;margin:0 auto;padding:0 18px 40px;}
+.dayhead{display:flex;gap:10px;align-items:baseline;justify-content:center;margin:8px 0 14px;}
+.daytitle{font-family:"Bodoni Moda",serif;color:var(--red);font-size:48px;margin:0;text-transform:uppercase;}
+.datestr{color:var(--red);font-weight:600;font-size:18px;}
+
+/* MATSEÐILL SAMANTEKT */
+.matsedill-box{background:white;border:2px solid var(--green);border-radius:20px;padding:20px;margin-bottom:20px;}
+.matsedill-title{color:var(--green);font-weight:700;font-size:18px;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+.meal-row{display:flex;gap:8px;align-items:baseline;margin-bottom:6px;}
+.meal-label{font-weight:700;color:var(--green);font-size:14px;min-width:120px;}
+.meal-value{font-size:14px;color:#444;}
+
+/* NEMENDATAFLA */
+.section-title{color:var(--green);font-size:20px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px;}
+.count-badge{background:var(--red);color:white;border-radius:999px;padding:2px 10px;font-size:14px;}
+
+table{width:100%;border-collapse:collapse;background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+thead{background:var(--green);color:white;}
+th{padding:12px 14px;text-align:left;font-size:13px;font-weight:700;letter-spacing:.5px;}
+td{padding:11px 14px;font-size:14px;border-bottom:1px solid #f0f0f0;}
+tr:last-child td{border-bottom:none;}
+tr.rautt td{background:#FFEBEE;}
+tr.gult td{background:#FFFDE7;}
+tr:hover td{background:#f5f5f5;}
+.status-badge{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;}
+.status-badge.adal{background:#E8F5E9;color:#2E7D32;}
+.status-badge.hlidar{background:#E3F2FD;color:#1565C0;}
+.status-badge.ofnaemis{background:#FFF3E0;color:#E65100;}
+.status-badge.enginn{background:#FFEBEE;color:#B71C1C;}
+
+.loading{text-align:center;padding:60px 20px;color:#888;font-size:18px;}
+.not-found{text-align:center;padding:60px 20px;}
+.not-found h2{color:var(--red);}
+.empty{text-align:center;padding:30px;color:#888;font-style:italic;}
+
+@media(max-width:600px){
+  .daytitle{font-size:28px;}
+  th,td{padding:8px 10px;font-size:12px;}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div id="skoliKort" style="display:none" class="skoli-kort">
+    <div class="skoli-nafn" id="skoliNafn">...</div>
+    <div class="skoli-sub" id="skoliSub"></div>
+  </div>
+  <div style="display:flex;gap:10px;justify-content:center;margin-bottom:8px;flex-wrap:wrap">
+    <div class="weekdropdown">
+      <button id="weekTrigger" class="weektrigger" onclick="toggleWeekMenu()">📅 Þessi vika ▼</button>
+      <div id="weekMenu" class="weekmenu">
+        <div id="weekOpt0" class="weekoption" onclick="selectWeekFromMenu(0)"></div>
+        <div id="weekOpt1" class="weekoption" onclick="selectWeekFromMenu(1)"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="days" id="dayNav" style="display:none">
+  <button class="daybtn" onclick="selectDay('Man')">Mánudagur</button>
+  <button class="daybtn" onclick="selectDay('Tri')">Þriðjudagur</button>
+  <button class="daybtn" onclick="selectDay('Mid')">Miðvikudagur</button>
+  <button class="daybtn" onclick="selectDay('Fim')">Fimmtudagur</button>
+  <button class="daybtn" onclick="selectDay('Fos')">Föstudagur</button>
+</nav>
+
+<main class="card" id="mainArea">
+  <div class="loading">Hleður...</div>
+</main>
+
+<script>
+var EXCEL_URL='https://johnbond87.github.io/matarstund/Matarstund_v12.xlsx';
+var MONTHS=['janúar','febrúar','mars','apríl','maí','júní','júlí','ágúst','september','október','nóvember','desember'];
+var DNAME={Man:'Mánudagur',Tri:'Þriðjudagur',Mid:'Miðvikudagur',Fim:'Fimmtudagur',Fos:'Föstudagur'};
+
+var currentDay='', currentWeekOffset=0;
+var mRows=[], ofnaemiRows=[], skoliId='';
+
+function esc(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function nm(s){return(s||'').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ð/g,'d').replace(/þ/g,'th').replace(/æ/g,'ae').replace(/ö/g,'o');}
+function cl(s){return(s===null||s===undefined)?'':s.toString().trim();}
+
+function excelSerialToDate(n){
+  if(typeof n!=='number'||!isFinite(n))return null;
+  var d=new Date(1899,11,30);d.setDate(d.getDate()+Math.floor(n));d.setHours(0,0,0,0);return d;
+}
+function parseDate(s){
+  if(typeof s==='number')return excelSerialToDate(s);
+  if(!s)return null;
+  var t=s.toString().trim(),m;
+  m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m){var d=new Date(+m[1],+m[2]-1,+m[3]);d.setHours(0,0,0,0);return d;}
+  return null;
+}
+function mondayOfWeek(d){var x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-(x.getDay()+6)%7);return x;}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);x.setHours(0,0,0,0);return x;}
+function weekRange(off){var s=addDays(mondayOfWeek(new Date()),off*7);return{start:s,end:addDays(s,5)};}
+function inWeekRange(date,off){if(!date)return false;var wr=weekRange(off),d=new Date(date);d.setHours(0,0,0,0);return d>=wr.start&&d<=wr.end;}
+function weekLabel(off){var wr=weekRange(off);return(off===0?'Þessi vika':'Næsta vika')+' ('+fmtDate(wr.start)+' – '+fmtDate(wr.end)+')';}
+function dayKey(date){var d=date.getDay();return d===1?'Man':d===2?'Tri':d===3?'Mid':d===4?'Fim':d===5?'Fos':null;}
+function fmtDate(d){return d.getDate()+'. '+MONTHS[d.getMonth()];}
+
+function updateWeekLabels(){
+  var t=document.getElementById('weekTrigger'),o0=document.getElementById('weekOpt0'),o1=document.getElementById('weekOpt1');
+  if(t)t.textContent='📅 '+(currentWeekOffset===0?'Þessi vika':'Næsta vika')+' ▼';
+  if(o0){o0.innerHTML='<span class="weekcheck">'+(currentWeekOffset===0?'✓':'')+'</span>'+weekLabel(0);o0.classList.toggle('active',currentWeekOffset===0);}
+  if(o1){o1.innerHTML='<span class="weekcheck">'+(currentWeekOffset===1?'✓':'')+'</span>'+weekLabel(1);o1.classList.toggle('active',currentWeekOffset===1);}
+}
+function toggleWeekMenu(){var m=document.getElementById('weekMenu'),t=document.getElementById('weekTrigger');var open=!m.classList.contains('open');m.classList.toggle('open',open);t.classList.toggle('open',open);updateWeekLabels();}
+function closeWeekMenu(){document.getElementById('weekMenu').classList.remove('open');document.getElementById('weekTrigger').classList.remove('open');}
+function selectWeekFromMenu(off){currentWeekOffset=off;updateWeekLabels();closeWeekMenu();renderDay();}
+
+function sheetRows(wb,name){var ws=wb.Sheets[name];if(!ws)return[];return XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});}
+
+function findCol(headers,needle){
+  for(var i=0;i<headers.length;i++){if(nm(headers[i]).indexOf(nm(needle))>=0)return i;}
+  return -1;
+}
+
+function parseMenuRows(rows){
+  var hidx=-1;
+  for(var i=0;i<rows.length;i++){if(nm(cl(rows[i][0]))==='dagsetning'){hidx=i;break;}}
+  if(hidx<0)return[];
+  var headers=rows[hidx].map(function(h){return cl(h).replace(/\n/g,' ').replace(/\s+/g,' ').trim();});
+  function fc(n){return findCol(headers,n);}
+  var C={DATE:0,GILDIR:fc('gildir'),MEAL:fc('máltíðartegund'),BIRTING:fc('birtingarnafn')};
+  function g(arr,c){if(c<0)return'';var v=arr[c];return(v===null||v===undefined||v==='')?'':v.toString().trim();}
+  var out=[],curDate=null,curMeal='',curGildir='Bæði',autoId=1000,curGid=null;
+  for(var r=hidx+1;r<rows.length;r++){
+    var arr=rows[r];
+    if(!arr||arr.every(function(v){return!v&&v!==0;}))continue;
+    var rawDate=arr[C.DATE];
+    var d=typeof rawDate==='number'?excelSerialToDate(rawDate):parseDate(rawDate);
+    var meal=g(arr,C.MEAL),gildir=g(arr,C.GILDIR),vara=g(arr,5);
+    if(d)curDate=d;
+    if(meal)curMeal=meal;
+    if(gildir)curGildir=gildir;
+    if(!curDate||!curMeal)continue;
+    if(!vara){
+      var gid='xl_'+(autoId++);curGid=gid;
+      out.push({_gid:gid,_d:new Date(curDate),_isMain:true,_meal:curMeal,_gildir:curGildir,_birting:g(arr,C.BIRTING)});
+    }
+  }
+  return out;
+}
+
+function parseOfnaemismatsedil(rows){
+  var list=[];
+  var hidx=-1;
+  for(var i=0;i<rows.length;i++){if(nm(cl(rows[i][0]))==='dagsetning'){hidx=i;break;}}
+  if(hidx<0)return list;
+  for(var r=hidx+1;r<rows.length;r++){
+    var dag=cl(rows[r][0]),skoli=cl(rows[r][1]),nafn=cl(rows[r][2]);
+    var deild=cl(rows[r][3]),ofnaemi=cl(rows[r][4]),ath=cl(rows[r][5]),faer=cl(rows[r][6]);
+    if(!nafn||!dag)continue;
+    list.push({dag:dag,skoli:skoli,nafn:nafn,deild:deild,ofnaemi:ofnaemi,athugasemd:ath,faer:faer});
+  }
+  return list;
+}
+
+function renderDay(){
+  var el=document.getElementById('mainArea');
+  if(!currentDay){el.innerHTML='';return;}
+  var off=currentWeekOffset;
+
+  // Finna dagsetninguna
+  var dagRows=mRows.filter(function(r){return r._isMain&&r._d&&inWeekRange(r._d,off)&&dayKey(r._d)===currentDay;});
+  var dt=dagRows.length?dagRows[0]._d:null;
+
+  var html='<div class="dayhead"><h1 class="daytitle">'+esc(DNAME[currentDay])+'</h1>'+(dt?'<span class="datestr">('+esc(fmtDate(dt))+')</span>':'')+'</div>';
+
+  // Sýna matseðil þennan dag
+  var skoliT=skoliId.indexOf('leiksk')>=0||skoliId.indexOf('alfaberg')>=0||skoliId.indexOf('hvaleyr')>=0?'Leikskóli':'Grunnskóli';
+
+  var meals=['Ávaxtastund','Aðalréttur','Hliðarréttur','Meðlæti','Síðdegishressing'];
+  var matsedillHtml='';
+  meals.forEach(function(meal){
+    var row=mRows.find(function(r){
+      return r._isMain&&r._d&&inWeekRange(r._d,off)&&dayKey(r._d)===currentDay&&nm(r._meal)===nm(meal);
+    });
+    if(!row||!row._birting)return;
+    matsedillHtml+='<div class="meal-row"><span class="meal-label">'+esc(meal)+':</span><span class="meal-value">'+esc(row._birting)+'</span></div>';
+  });
+
+  if(matsedillHtml){
+    html+='<div class="matsedill-box"><div class="matsedill-title">🍽️ Matseðill þennan dag</div>'+matsedillHtml+'</div>';
+  }
+
+  // Finna dagsetningarstreng
+  var dagStr='';
+  if(dt){
+    dagStr=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+  }
+
+  // Finna öll börn í þessum skóla sem eru á ofnæmismatseðlinum þennan dag
+  var born=ofnaemiRows.filter(function(r){
+    return nm(r.skoli).indexOf(nm(skoliId))>=0 && r.dag===dagStr;
+  });
+
+  // Flokka eftir hvað þau fá
+  var rautt=born.filter(function(b){return nm(b.faer).indexOf('enginn')>=0;});
+  var annad=born.filter(function(b){return nm(b.faer).indexOf('enginn')<0;});
+
+  if(rautt.length){
+    html+='<div class="section-title">🔴 Þurfa sérrrétt <span class="count-badge">'+rautt.length+'</span></div>';
+    html+=buildTable(rautt);
+  }
+
+  if(annad.length){
+    html+='<div class="section-title">🟡 Fá annan rétt <span class="count-badge">'+annad.length+'</span></div>';
+    html+=buildTable(annad);
+  }
+
+  if(!born.length){
+    html+='<div class="empty">✅ Öll börn fá aðalréttinn þennan dag.</div>';
+  }
+
+  el.innerHTML=html;
+}
+
+function buildTable(born){
+  var html='<table><thead><tr><th>Nafn</th><th>Deild/Bekkur</th><th>Ofnæmi / Óþol</th><th>Fær rétt</th></tr></thead><tbody>';
+  born.forEach(function(b){
+    var faerN=nm(b.faer);
+    var cls=faerN.indexOf('enginn')>=0?'enginn':faerN.indexOf('hliðar')>=0?'hlidar':faerN.indexOf('ofnæmis')>=0||faerN.indexOf('ofnaemis')>=0?'ofnaemis':'adal';
+    var trCls=cls==='enginn'?'rautt':cls!=='adal'?'gult':'';
+    html+='<tr class="'+trCls+'">';
+    html+='<td><strong>'+esc(b.nafn)+'</strong></td>';
+    html+='<td>'+esc(b.deild)+'</td>';
+    html+='<td>'+esc(b.ofnaemi)+(b.athugasemd?'<br><small style="color:#888">'+esc(b.athugasemd)+'</small>':'')+'</td>';
+    html+='<td><span class="status-badge '+cls+'">'+esc(b.faer)+'</span></td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  return html;
+}
+
+function selectDay(dk){
+  currentDay=dk;
+  document.querySelectorAll('.daybtn').forEach(function(b){b.classList.toggle('active',b.getAttribute('onclick').indexOf("'"+dk+"'")>=0);});
+  renderDay();
+}
+
+// INIT
+document.addEventListener('DOMContentLoaded',function(){
+  skoliId=new URLSearchParams(window.location.search).get('id')||'';
+
+  window.addEventListener('message',function(event){
+    if(event.data&&typeof event.data==='string'&&!skoliId){
+      skoliId=event.data;
+      loadAndInit();
+    }
+  });
+
+  if(!skoliId){
+    document.getElementById('mainArea').innerHTML='<div class="not-found"><h2>Skóli finnst ekki</h2><p>Hlekkurinn er ekki gildur.</p></div>';
+    return;
+  }
+
+  updateWeekLabels();
+  document.addEventListener('click',function(e){var dd=document.querySelector('.weekdropdown');if(dd&&!dd.contains(e.target))closeWeekMenu();});
+
+  loadAndInit();
+});
+
+function loadAndInit(){
+  fetch(EXCEL_URL,{cache:'no-store'})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();})
+    .then(function(buf){
+      var wb=XLSX.read(buf,{type:'array',cellDates:false,raw:false});
+      mRows=parseMenuRows(XLSX.utils.sheet_to_json(wb.Sheets['Grunnmatseðill'],{header:1,raw:false,defval:''}));
+      ofnaemiRows=parseOfnaemismatsedil(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmismatseðill'],{header:1,raw:false,defval:''}));
+
+      // Finna skólanafn
+      var skolaNofn=[];
+      ofnaemiRows.forEach(function(r){if(r.skoli&&skolaNofn.indexOf(r.skoli)<0)skolaNofn.push(r.skoli);});
+      var skoliNafn=skolaNofn.find(function(s){return nm(s).indexOf(nm(skoliId))>=0;})||skoliId;
+
+      // Sýna skóli kort
+      document.getElementById('skoliKort').style.display='block';
+      document.getElementById('skoliNafn').textContent='🏫 '+skoliNafn;
+
+      var allBorn=ofnaemiRows.filter(function(r){return nm(r.skoli).indexOf(nm(skoliId))>=0;});
+      var fjoldi=[...new Set(allBorn.map(function(r){return r.nafn;}))].length;
+      document.getElementById('skoliSub').textContent=fjoldi+' börn með sérfæðisþarfir skráðar';
+
+      document.getElementById('dayNav').style.display='flex';
+      var dk=dayKey(new Date())||'Man';
+      selectDay(dk);
+    })
+    .catch(function(err){
+      document.getElementById('mainArea').innerHTML='<div class="loading">Villa: '+esc(String(err))+'</div>';
+    });
+}
+</script>
+</body>
+</html>
