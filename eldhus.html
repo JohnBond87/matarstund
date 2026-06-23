@@ -273,7 +273,9 @@ function renderDay(){
     var main=mRows.filter(function(r){
       return r._isMain&&r._d&&inWeekRange(r._d,off)&&dayKey(r._d)===currentDay&&nm(r._meal)===nm(meal);
     }).filter(function(r){
-      return r._gildir==='Bæði'||nm(r._gildir)===nm(skoliT);
+      return r._gildir==='Bæði'||nm(r._gildir)===nm(skoliT)||
+        (skoliT==='Grunnskóli'&&nm(r._gildir)==='grunnskoli')||
+        (skoliT==='Leikskóli'&&nm(r._gildir)==='leikskoli');
     });
     if(!main.length)return;
     var varar=mRows.filter(function(r){return !r._isMain&&main.some(function(m){return m._gid===r._gid;});});
@@ -302,7 +304,9 @@ function renderDay(){
     var main=mRows.filter(function(r){
       return r._isMain&&r._d&&inWeekRange(r._d,off)&&dayKey(r._d)===currentDay&&nm(r._meal)===nm(meal);
     }).filter(function(r){
-      return r._gildir==='Bæði'||nm(r._gildir)===nm(skoliT);
+      return r._gildir==='Bæði'||nm(r._gildir)===nm(skoliT)||
+        (skoliT==='Grunnskóli'&&nm(r._gildir)==='grunnskoli')||
+        (skoliT==='Leikskóli'&&nm(r._gildir)==='leikskoli');
     });
     main.forEach(function(m){
       var nafn=m._birting||meal;
@@ -332,17 +336,11 @@ function renderDay(){
 
   // Sía eftir skólategund með skolaTegundMap
   var skolaNofn;
+  // Nota flokkunarnúmer: -1 = grunn/frístund, -2 = leikskóli
   if(skoliT==='Leikskóli'){
-    // Bara leikskólar
-    skolaNofn=tengdirSkolar.filter(function(s){
-      return (skolaTegundMap[s]||'')==='Leikskóli';
-    });
+    skolaNofn=tengdirSkolar.filter(function(s){return (skolaTegundMap[s+'_fk']||'')==='2';});
   } else if(skoliT==='Grunnskóli'){
-    // Grunnskólar OG frístundaheimili
-    skolaNofn=tengdirSkolar.filter(function(s){
-      var t=skolaTegundMap[s]||'';
-      return t==='Grunnskóli'||t==='Frístundaheimili';
-    });
+    skolaNofn=tengdirSkolar.filter(function(s){return (skolaTegundMap[s+'_fk']||'')==='1';});
   } else {
     skolaNofn=tengdirSkolar;
   }
@@ -435,19 +433,35 @@ function loadAndInit(){
       // {nafn, tegund} - Grunnskóli, Leikskóli, Frístundaheimili
       skolaTegundMap={}; // Uppfæra global
 
-      // Finna alla skóla með sama eldhúshlekk
+      // Finna alla skóla með sama eldhúshlekk með flokkunarkóða
+      // Skólalisti: C1=nafn, C2=tegund, C4=tengdur, C7=eldhúshlekk, C8=flokkunarkóði
+      // Finna fyrst hvaða flokkunarforskeyti þetta eldhús tilheyrir
+      var eldhusForskeyti='';
       for(var r=2;r<slRows.length;r++){
-        var sn=cl(slRows[r][0]);
-        var tegund=cl(slRows[r][1]);
-        var tengdur=cl(slRows[r][3]);
         var eh=cl(slRows[r][6]);
-        if(!sn||!eh)continue;
+        var fk=cl(slRows[r][7]); // Flokkunarkóði
+        if(!eh||!fk)continue;
         if(nm(eh).indexOf(nm(eldhusId))>=0){
+          // Forskeyti = allt fyrir '-' t.d. "en" úr "en-1"
+          eldhusForskeyti=fk.split('-')[0];
+          break;
+        }
+      }
+      console.log('Eldhús forskeyti:', eldhusForskeyti);
+
+      // Finna alla skóla með sama forskeyti
+      for(var r2=2;r2<slRows.length;r2++){
+        var sn=cl(slRows[r2][0]);
+        var tegund=cl(slRows[r2][1]);
+        var fk2=cl(slRows[r2][7]);
+        if(!sn||!fk2)continue;
+        if(fk2.split('-')[0]===eldhusForskeyti){
           if(tengdirSkolar.indexOf(sn)<0){
             tengdirSkolar.push(sn);
             skolaTegundMap[sn]=tegund;
+            // Flokkunarnúmer: 1=grunnskóli/frístund, 2=leikskóli
+            skolaTegundMap[sn+'_fk']=fk2.split('-')[1];
           }
-          // Nota grunnskólann sem aðalskóla
           if(tegund==='Grunnskóli'&&!aðalSkoli) aðalSkoli=sn;
         }
       }
@@ -461,13 +475,9 @@ function loadAndInit(){
       document.getElementById('eldhusSub').textContent='Þjónar: '+tengdirSkolar.join(', ');
 
       // Sýna skóli/leikskóli val ef bæði eru til
-      var hasLeik=tengdirSkolar.some(function(s){
-        return (skolaTegundMap[s]||'')==='Leikskóli';
-      });
-      var hasGrunn=tengdirSkolar.some(function(s){
-        var t=skolaTegundMap[s]||'';
-        return t==='Grunnskóli'||t==='Frístundaheimili';
-      });
+      // Nota flokkunarnúmer: 1=grunn/frístund, 2=leikskóli
+      var hasGrunn=tengdirSkolar.some(function(s){return (skolaTegundMap[s+'_fk']||'')==='1';});
+      var hasLeik=tengdirSkolar.some(function(s){return (skolaTegundMap[s+'_fk']||'')==='2';});
 
       if(hasLeik&&hasGrunn){
         document.getElementById('skoliValDiv').style.display='flex';
