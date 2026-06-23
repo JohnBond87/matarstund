@@ -108,14 +108,11 @@ tr.gult td{background:#FFFDE7;}
     <div style="font-size:36px">👨‍🍳</div>
   </div>
 
-  <!-- Skóli/Leikskóli val -->
-  <div id="skoliValDiv" style="display:none" class="val-lina">
-    <button id="btnGrunn" class="valbtn skoli" onclick="setSkoliTegund('Grunnskóli')">🏫 Grunnskóli / Frístund</button>
-    <button id="btnLeik" class="valbtn skoli" onclick="setSkoliTegund('Leikskóli')">🎈 Leikskóli</button>
-  </div>
-
-  <!-- Máltíð val -->
+  <!-- Allt val í einni línu -->
   <div class="val-lina">
+    <button id="btnGrunn" class="valbtn skoli" style="display:none" onclick="setSkoliTegund('Grunnskóli')">🏫 Grunnskóli / Frístund</button>
+    <button id="btnLeik" class="valbtn skoli" style="display:none" onclick="setSkoliTegund('Leikskóli')">🎈 Leikskóli</button>
+    <div style="width:2px;background:#ddd;margin:0 4px;display:none" id="valSkilja"></div>
     <button id="btnHadegi" class="valbtn maltid active" onclick="setMaltid('hadegi')">🍽️ Hádegismatur</button>
     <button id="btnHressing" class="valbtn maltid" onclick="setMaltid('hressing')">🧃 Síðdegishressing</button>
   </div>
@@ -565,7 +562,10 @@ function load(){
       var hasGrunn=tengdirSkolar.some(function(s){return (skolaTegundMap[s+'_fk']||'')==='1';});
       var hasLeik=tengdirSkolar.some(function(s){return (skolaTegundMap[s+'_fk']||'')==='2';});
       if(hasGrunn&&hasLeik){
-        document.getElementById('skoliValDiv').style.display='flex';
+        // Sýna báða hnappa og skiljuna
+        document.getElementById('btnGrunn').style.display='';
+        document.getElementById('btnLeik').style.display='';
+        document.getElementById('valSkilja').style.display='';
         document.getElementById('btnGrunn').classList.add('active');
         currentSkoliTegund='Grunnskóli';
       } else if(hasLeik){
