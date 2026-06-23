@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Bodoni+Moda:opsz,wght@6..96,700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#D81E30;--cream:#FDF8E2;--green:#39552C;--soft:rgba(57,85,44,.06);}
+*{box-sizing:border-box;}
+body{font-family:Manrope,Arial,sans-serif;background:var(--cream);margin:0;color:#222;}
+
+/* BARN KORT */
+.hero{padding:20px 18px 8px;text-align:center;position:relative;z-index:1;}
+.barn-kort{max-width:600px;margin:0 auto 16px;background:var(--green);color:white;border-radius:20px;padding:20px 24px;display:flex;align-items:center;gap:16px;}
+.barn-icon{font-size:40px;}
+.barn-info{text-align:left;flex:1;}
+.barn-nafn{font-size:22px;font-weight:700;margin-bottom:4px;}
+.barn-skoli{font-size:14px;opacity:.8;}
+.barn-ofnaemi{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;}
+.ofn-tag{background:rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;font-size:13px;font-weight:600;}
+
+/* VIKUVAL */
+.days{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:8px auto 16px;max-width:980px;padding:0 18px;}
+.daybtn{background:var(--cream);color:var(--green);border:2px solid var(--red);border-radius:18px;padding:10px 18px;min-width:130px;font-weight:700;cursor:pointer;transition:.18s;font-family:inherit;}
+.daybtn:hover,.daybtn.active{background:var(--red);color:#fff;}
+.weekdropdown{position:relative;display:inline-block;}
+.weektrigger{border:2px solid var(--red);color:var(--red);background:var(--cream);padding:10px 18px;border-radius:999px;font-weight:700;cursor:pointer;font-family:inherit;min-width:170px;}
+.weektrigger:hover,.weektrigger.open{background:var(--red);color:#fff;}
+.weekmenu{display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);min-width:310px;background:#fffefc;border:2px solid var(--red);border-radius:18px;box-shadow:0 10px 24px rgba(0,0,0,.18);z-index:50;overflow:hidden;}
+.weekmenu.open{display:block;}
+.weekoption{padding:12px 16px;cursor:pointer;color:var(--green);font-weight:700;font-family:inherit;background:#fffefc;}
+.weekoption:hover{background:#fff3e0;}
+.weekoption.active{background:rgba(57,85,44,.08);color:var(--red);}
+.weekcheck{display:inline-block;width:22px;color:var(--red);font-weight:700;}
+
+/* DAGUR */
+.card{max-width:980px;margin:0 auto;padding:0 18px 40px;position:relative;z-index:1;}
+.dayhead{display:flex;gap:10px;align-items:baseline;justify-content:center;margin:8px 0 14px;}
+.daytitle{font-family:"Bodoni Moda",serif;color:var(--red);font-size:56px;margin:0;text-transform:uppercase;}
+.datestr{color:var(--red);font-weight:600;font-size:18px;}
+
+/* FÆR RÉTTUR - hvað barnið fær */
+.faer-band{padding:16px 20px;border-radius:18px;margin:0 0 14px;border:2px solid;}
+.faer-band.adal{background:#E8F5E9;border-color:#2E7D32;}
+.faer-band.hlidar{background:#E3F2FD;border-color:#1565C0;}
+.faer-band.ofnaemis{background:#FFF3E0;border-color:#E65100;}
+.faer-band.enginn{background:#FFEBEE;border-color:var(--red);}
+.faer-icon{font-size:20px;margin-right:8px;}
+.faer-title{font-size:16px;font-weight:700;}
+.faer-band.adal .faer-title{color:#2E7D32;}
+.faer-band.hlidar .faer-title{color:#1565C0;}
+.faer-band.ofnaemis .faer-title{color:#E65100;}
+.faer-band.enginn .faer-title{color:var(--red);}
+
+/* BAND */
+.band{background:var(--soft);padding:20px;border:2px solid var(--red);border-radius:24px;margin:14px 0;}
+.bandtitle{display:flex;align-items:center;gap:10px;color:var(--red);font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin:0 0 10px;}
+
+/* VÖRUR */
+.dish-group{margin-bottom:10px;}
+.dish-name{font-size:18px;font-weight:700;color:var(--green);}
+.vara-list{margin-top:3px;padding-left:8px;}
+.vara-item{font-size:14px;color:#555;display:inline;}
+.vara-item::after{content:", ";}
+.vara-item:last-child::after{content:"";}
+.vara-g{color:#aaa;font-weight:400;font-size:12px;}
+
+/* CLICKABLE */
+.clickable{cursor:pointer;color:var(--green);font-weight:700;padding:2px 4px;border-radius:8px;text-decoration:underline;text-decoration-style:dotted;}
+.clickable:hover{background:#e9f3ea;}
+.hint{max-width:980px;margin:0 auto 8px;padding:0 18px;font-size:14px;color:#39552C;}
+
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px;}
+.modal.open{display:flex;}
+.modalbox{background:#fffefc;position:relative;padding:28px 30px 30px;width:92%;max-width:860px;max-height:88vh;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.3);display:flex;flex-direction:column;border:2px solid var(--red);border-radius:24px;}
+.modalscroll{flex:0 1 auto;overflow-y:auto;padding-right:12px;margin-top:8px;max-height:calc(88vh - 70px);}
+.closebtn{position:absolute;top:16px;right:20px;font-size:22px;cursor:pointer;color:#aaa;background:none;border:none;font-family:inherit;}
+.modaltitle{color:var(--green);font-size:26px;font-weight:700;margin:0 0 20px;}
+.modalsub{color:var(--green);font-size:18px;margin:20px 0 10px;font-weight:700;}
+.varabox{background:#fff8f1;border-left:5px solid #FF7D39;padding:16px;border-radius:12px;margin-bottom:14px;}
+.varanafn{font-weight:700;font-size:16px;margin-bottom:4px;}
+.varainn{font-size:14px;margin-bottom:6px;line-height:1.6;}
+.varaofn{font-size:14px;color:#C0392B;font-weight:600;}
+.nutable{width:100%;border-collapse:collapse;margin-top:16px;}
+.nutable th,.nutable td{border:1px solid #ddd;padding:10px;text-align:left;font-size:15px;}
+.nutable th{background:var(--green);color:#fff;text-transform:uppercase;letter-spacing:.5px;font-size:13px;}
+.nutable tr:nth-child(even) td{background:#f9f9f9;}
+.nonut{background:#fff6f6;border-left:4px solid #e0e0e0;padding:12px 16px;border-radius:8px;color:#888;font-size:14px;margin-top:12px;}
+
+/* NOT FOUND */
+.not-found{text-align:center;padding:60px 20px;}
+.not-found h2{color:var(--red);font-size:24px;margin-bottom:12px;}
+.loading{text-align:center;padding:60px 20px;color:#888;font-size:18px;}
+
+@media(max-width:480px){
+  .daytitle{font-size:28px;}
+  .barn-nafn{font-size:18px;}
+  .daybtn{min-width:0;padding:8px 12px;font-size:13px;}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div id="barnKort" style="display:none" class="barn-kort">
+    <div class="barn-icon">👤</div>
+    <div class="barn-info">
+      <div class="barn-nafn" id="barnNafn"></div>
+      <div class="barn-skoli" id="barnSkoli"></div>
+      <div class="barn-ofnaemi" id="barnOfnaemi"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;justify-content:center;margin-bottom:8px;flex-wrap:wrap">
+    <div class="weekdropdown">
+      <button id="weekTrigger" class="weektrigger" onclick="toggleWeekMenu()">📅 Þessi vika ▼</button>
+      <div id="weekMenu" class="weekmenu">
+        <div id="weekOpt0" class="weekoption" onclick="selectWeekFromMenu(0)"></div>
+        <div id="weekOpt1" class="weekoption" onclick="selectWeekFromMenu(1)"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="days" id="dayNav" style="display:none">
+  <button class="daybtn" onclick="selectDay('Man')">Mánudagur</button>
+  <button class="daybtn" onclick="selectDay('Tri')">Þriðjudagur</button>
+  <button class="daybtn" onclick="selectDay('Mid')">Miðvikudagur</button>
+  <button class="daybtn" onclick="selectDay('Fim')">Fimmtudagur</button>
+  <button class="daybtn" onclick="selectDay('Fos')">Föstudagur</button>
+</nav>
+
+<main class="card" id="mainArea">
+  <div class="loading">Hleður...</div>
+</main>
+
+<div id="infoModal" class="modal">
+  <div class="modalbox">
+    <button class="closebtn" onclick="closeModal()">✕</button>
+    <div id="modalContent" class="modalscroll"></div>
+  </div>
+</div>
+
+<script>
+var EXCEL_URL='https://johnbond87.github.io/matarstund/Matarstund_v12.xlsx';
+var MONTHS=['janúar','febrúar','mars','apríl','maí','júní','júlí','ágúst','september','október','nóvember','desember'];
+var DNAME={Man:'Mánudagur',Tri:'Þriðjudagur',Mid:'Miðvikudagur',Fim:'Fimmtudagur',Fos:'Föstudagur'};
+var DAYNUM={Man:1,Tri:2,Mid:3,Fim:4,Fos:5};
+
+var currentDay='',currentWeekOffset=0;
+var mRows=[],ofnaemiRows=[];
+var barnId='',barnNafn='';
+
+function esc(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function nm(s){return(s||'').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+function cl(s){return(s===null||s===undefined)?'':s.toString().trim();}
+function boldify(txt){
+  if(!txt)return'';
+  var parts=txt.split(/\*\*([^*]+)\*\*/),r='';
+  for(var i=0;i<parts.length;i++) r+=i%2===0?esc(parts[i]):'<strong>'+esc(parts[i])+'</strong>';
+  return r;
+}
+
+function excelSerialToDate(n){
+  if(typeof n!=='number'||!isFinite(n))return null;
+  var d=new Date(1899,11,30);d.setDate(d.getDate()+Math.floor(n));d.setHours(0,0,0,0);return d;
+}
+function parseDate(s){
+  if(typeof s==='number')return excelSerialToDate(s);
+  if(!s)return null;
+  var t=s.toString().trim(),m;
+  m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m){var d=new Date(+m[1],+m[2]-1,+m[3]);d.setHours(0,0,0,0);return d;}
+  m=t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m){var d2=new Date(+m[3],+m[2]-1,+m[1]);d2.setHours(0,0,0,0);return d2;}
+  return null;
+}
+function mondayOfWeek(d){var x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-(x.getDay()+6)%7);return x;}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);x.setHours(0,0,0,0);return x;}
+function weekRange(off){var s=addDays(mondayOfWeek(new Date()),off*7);return{start:s,end:addDays(s,5)};}
+function inWeekRange(date,off){if(!date)return false;var wr=weekRange(off),d=new Date(date);d.setHours(0,0,0,0);return d>=wr.start&&d<=wr.end;}
+function weekLabel(off){var wr=weekRange(off);return(off===0?'Þessi vika':'Næsta vika')+' ('+fmtDate(wr.start)+' – '+fmtDate(wr.end)+')';}
+function dayKey(date){var d=date.getDay();return d===1?'Man':d===2?'Tri':d===3?'Mid':d===4?'Fim':d===5?'Fos':null;}
+function fmtDate(d){return d.getDate()+'. '+MONTHS[d.getMonth()];}
+function fmtDateFull(d){return d.getDate()+'. '+MONTHS[d.getMonth()]+' '+d.getFullYear();}
+
+// VIKUVAL
+function updateWeekLabels(){
+  var t=document.getElementById('weekTrigger'),o0=document.getElementById('weekOpt0'),o1=document.getElementById('weekOpt1');
+  if(t)t.textContent='📅 '+(currentWeekOffset===0?'Þessi vika':'Næsta vika')+' ▼';
+  if(o0){o0.innerHTML='<span class="weekcheck">'+(currentWeekOffset===0?'✓':'')+'</span>'+weekLabel(0);o0.classList.toggle('active',currentWeekOffset===0);}
+  if(o1){o1.innerHTML='<span class="weekcheck">'+(currentWeekOffset===1?'✓':'')+'</span>'+weekLabel(1);o1.classList.toggle('active',currentWeekOffset===1);}
+}
+function toggleWeekMenu(){var m=document.getElementById('weekMenu'),t=document.getElementById('weekTrigger');var open=!m.classList.contains('open');m.classList.toggle('open',open);t.classList.toggle('open',open);updateWeekLabels();}
+function closeWeekMenu(){document.getElementById('weekMenu').classList.remove('open');document.getElementById('weekTrigger').classList.remove('open');}
+function selectWeekFromMenu(off){currentWeekOffset=off;updateWeekLabels();closeWeekMenu();renderDay();}
+
+// EXCEL LESTUR
+function sheetRows(wb,name){var ws=wb.Sheets[name];if(!ws)return[];return XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});}
+
+function findCol(headers,needle){
+  for(var i=0;i<headers.length;i++){if(nm(headers[i]).indexOf(nm(needle))>=0)return i;}
+  return -1;
+}
+
+function parseMenuRows(rows){
+  var hidx=-1;
+  for(var i=0;i<rows.length;i++){if(nm(cl(rows[i][0]))==='dagsetning'){hidx=i;break;}}
+  if(hidx<0)return[];
+  var headers=rows[hidx].map(function(h){return cl(h).replace(/\n/g,' ').replace(/\s+/g,' ').trim();});
+  function fc(n){return findCol(headers,n);}
+  var C={
+    DATE:0,GILDIR:fc('gildir'),MEAL:fc('máltíðartegund'),
+    VARA:fc('vara / réttur'),BIRTING:fc('birtingarnafn'),
+    SK_LEIK:(function(){var v=fc('skammtur leikskóli');return v>=0?v:fc('skammtur leikskoli');}()),
+    SK_GRUNN:(function(){var v=fc('skammtur grunnskóli');return v>=0?v:fc('skammtur grunnskoli');}()),
+    INN:(function(){var v=fc('innihaldslýsing');return v>=0?v:fc('innihaldslysing');}()),
+    OFN:(function(){var v=fc('ofnæmisvaldar');return v>=0?v:fc('ofnaemisvaldar');}()),
+    FYR:fc('fyrirvari'),
+    ORKA:fc('orka'),FITA:fc('fita'),
+    METT:(function(){var v=fc('mettuð');return v>=0?v:fc('mettud');}()),
+    KOLV:fc('kolvetni'),
+    PROT:(function(){var v=fc('prótein');return v>=0?v:fc('protein');}()),
+    SALT:fc('salt'),
+  };
+  function g(arr,c){if(c<0)return'';var v=arr[c];return(v===null||v===undefined||v==='')?'':v.toString().trim();}
+  function gn(arr,c){if(c<0)return null;var v=parseFloat(g(arr,c));return isNaN(v)?null:v;}
+  var out=[],autoId=1000,curDate=null,curMeal='',curGildir='Bæði',curGid=null;
+  for(var r=hidx+1;r<rows.length;r++){
+    var arr=rows[r];
+    if(!arr||arr.every(function(v){return!v&&v!==0;}))continue;
+    var rawDate=arr[C.DATE];
+    var d=typeof rawDate==='number'?excelSerialToDate(rawDate):parseDate(rawDate);
+    var meal=g(arr,C.MEAL),gildir=g(arr,C.GILDIR),vara=g(arr,C.VARA);
+    if(d)curDate=d;
+    if(meal)curMeal=meal;
+    if(gildir)curGildir=gildir;
+    if(!curDate||!curMeal)continue;
+    if(!vara){
+      var gid='xl_'+(autoId++);curGid=gid;
+      out.push({_gid:gid,_d:new Date(curDate),_isMain:true,_meal:curMeal,_gildir:gildir||curGildir,_vara:'',_birting:g(arr,C.BIRTING)});
+    } else if(curGid){
+      out.push({_gid:curGid,_d:new Date(curDate),_isMain:false,_meal:curMeal,_gildir:gildir||curGildir,
+        _vara:vara,_birting:g(arr,C.BIRTING),
+        _skLeik:gn(arr,C.SK_LEIK),_skGrunn:gn(arr,C.SK_GRUNN),
+        _inn:g(arr,C.INN),_ofn:g(arr,C.OFN),_fyr:g(arr,C.FYR),
+        _orka:gn(arr,C.ORKA),_fita:gn(arr,C.FITA),_mett:gn(arr,C.METT),
+        _kolv:gn(arr,C.KOLV),_prot:gn(arr,C.PROT),_salt:gn(arr,C.SALT)});
+    }
+  }
+  return out;
+}
+
+// LESA OFNÆMISMATSEÐIL
+// Skilar map: { "nafn|dagsetning": { faer, ofnaemi, athugasemd } }
+function parseOfnaemismatsedil(rows){
+  var map={};
+  // Finna hausalínu
+  var hidx=-1;
+  for(var i=0;i<rows.length;i++){
+    if(nm(cl(rows[i][0]))==='dagsetning'){hidx=i;break;}
+  }
+  if(hidx<0)return map;
+  // C1=dag, C2=skoli, C3=nafn, C4=deild, C5=ofnaemi, C6=ath, C7=faer
+  for(var r=hidx+1;r<rows.length;r++){
+    var dag=cl(rows[r][0]),nafn=cl(rows[r][2]),faer=cl(rows[r][6]);
+    var ofnaemi=cl(rows[r][4]),ath=cl(rows[r][5]);
+    if(!nafn||!dag)continue;
+    var key=nm(nafn)+'|'+dag;
+    map[key]={faer:faer,ofnaemi:ofnaemi,athugasemd:ath};
+  }
+  return map;
+}
+
+// LESA BARN ÚR NEMENDASKRÁ
+function findBarn(wb,id){
+  var sheets=['Nemendaskrá — Grunnskólar','Nemendaskrá — Leikskólar'];
+  var teg=['gs','ls'];
+  var idNm=nm(id);
+  for(var si=0;si<sheets.length;si++){
+    var rows=sheetRows(wb,sheets[si]);
+    for(var r=0;r<rows.length;r++){
+      var nafn=cl(rows[r][1]);
+      if(!nafn)continue;
+      // Foreldrahlekkur: GS=C10=index9, LS=C8=index7
+      var hlekkIdx=teg[si]==='gs'?9:7;
+      var hlekkur=cl(rows[r][hlekkIdx]);
+      if(!hlekkur)continue;
+      if(nm(hlekkur).indexOf(idNm)>=0){
+        if(teg[si]==='gs'){
+          return{nafn:nafn,skoli:cl(rows[r][0]),deild:cl(rows[r][2]),
+            ofnaemi:cl(rows[r][6]),athugasemd:cl(rows[r][7]),
+            ofnaemisrettur:cl(rows[r][8]),tegund:'gs'};
+        } else {
+          return{nafn:nafn,skoli:cl(rows[r][0]),deild:cl(rows[r][2]),
+            ofnaemi:cl(rows[r][4]),athugasemd:cl(rows[r][5]),
+            ofnaemisrettur:cl(rows[r][6]),tegund:'ls'};
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// HVAÐ FÆR BARNIÐ - les úr ofnæmismatseðli
+function hvadFaerBarnid(dagDate){
+  if(!dagDate||!barnNafn)return null;
+  // Reyna bæði dagsetningarsnið
+  var dagStr=dagDate.getFullYear()+'-'
+    +String(dagDate.getMonth()+1).padStart(2,'0')+'-'
+    +String(dagDate.getDate()).padStart(2,'0');
+  var key=nm(barnNafn)+'|'+dagStr;
+  return ofnaemiRows[key]||null;
+}
+
+// MODAL
+function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('infoModal').classList.add('open');document.body.style.overflow='hidden';}
+function closeModal(){document.getElementById('infoModal').classList.remove('open');document.body.style.overflow='';}
+
+function showGroupModal(mainName,gid){
+  var varar=mRows.filter(function(r){return r._gid===gid&&!r._isMain;});
+  var html='<h2 class="modaltitle">'+esc(mainName)+'</h2>';
+  if(!varar.length){html+='<div class="varabox">Engar nánari upplýsingar.</div>';openModal(html);return;}
+  html+='<h3 class="modalsub">Innihaldsefni</h3>';
+  varar.forEach(function(v){
+    var nafn=v._birting||v._vara;if(!nafn)return;
+    html+='<div class="varabox"><div class="varanafn">'+esc(nafn)+(v._skLeik?' <span style="font-weight:400;color:#888;font-size:13px">('+v._skLeik+'g)</span>':'')+'</div>';
+    if(v._inn&&v._inn!=='Vara finnst ekki')html+='<div class="varainn">'+boldify(v._inn)+'</div>';
+    if(v._ofn&&v._ofn!=='Engir skráðir')html+='<div class="varaofn">⚠️ Ofnæmisvaldar: '+esc(v._ofn)+'</div>';
+    if(v._fyr)html+='<div style="font-size:13px;color:#888;margin-top:4px;">ℹ️ '+esc(v._fyr)+'</div>';
+    html+='</div>';
+  });
+  // Næringargildi
+  var NUT=[{k:'_orka',l:'Orka',u:'kcal'},{k:'_fita',l:'Fita',u:'g'},{k:'_mett',l:'Mettuð fita',u:'g'},{k:'_kolv',l:'Kolvetni',u:'g'},{k:'_prot',l:'Prótein',u:'g'},{k:'_salt',l:'Salt',u:'g'}];
+  var hasNut=varar.some(function(v){return NUT.some(function(n){return v[n.k]!==null&&v[n.k]!==undefined;});});
+  if(hasNut){
+    html+='<h3 class="modalsub">Næringargildi (í skammti)</h3>';
+    html+='<div style="overflow-x:auto"><table class="nutable"><thead><tr><th>Næringargildi</th><th>Magn</th></tr></thead><tbody>';
+    NUT.forEach(function(n){
+      var tot=varar.reduce(function(s,v){return v[n.k]!==null&&v[n.k]!==undefined?s+v[n.k]:s;},0);
+      var has=varar.some(function(v){return v[n.k]!==null&&v[n.k]!==undefined;});
+      html+='<tr><td>'+n.l+'</td><td>'+(has?Math.round(tot*10)/10+' '+n.u:'&mdash;')+'</td></tr>';
+    });
+    html+='</tbody></table></div>';
+  }
+  openModal(html);
+}
+
+// RENDER
+function renderDay(){
+  var el=document.getElementById('mainArea');
+  if(!currentDay){el.innerHTML='';return;}
+  var off=currentWeekOffset;
+
+  // Finna dagsetninguna
+  var dagRows=mRows.filter(function(r){
+    return r._isMain&&r._d&&inWeekRange(r._d,off)&&dayKey(r._d)===currentDay;
+  });
+  var dt=dagRows.length?dagRows[0]._d:null;
+
+  var html='<div class="dayhead"><h1 class="daytitle">'+esc(DNAME[currentDay])+'</h1>'+(dt?'<span class="datestr">('+esc(fmtDate(dt))+')</span>':'')+'</div>';
+
+  // Hvað fær barnið?
+  var faerInfo=dt?hvadFaerBarnid(dt):null;
+
+  if(faerInfo){
+    var tegund='adal';
+    var faerTxt=faerInfo.faer;
+    if(nm(faerTxt).indexOf('enginn')>=0) tegund='enginn';
+    else if(nm(faerTxt).indexOf('hliðar')>=0) tegund='hlidar';
+    else if(nm(faerTxt).indexOf('ofnæmis')>=0||nm(faerTxt).indexOf('ofnaemis')>=0) tegund='ofnaemis';
+    else if(nm(faerTxt).indexOf('aðal')>=0||nm(faerTxt).indexOf('adal')>=0) tegund='adal';
+
+    var icon=tegund==='adal'?'✅':tegund==='hlidar'?'🔵':tegund==='ofnaemis'?'🟠':'🔴';
+    html+='<div class="faer-band '+tegund+'">';
+    html+='<span class="faer-icon">'+icon+'</span>';
+    html+='<span class="faer-title">'+esc(faerTxt)+'</span>';
+    html+='</div>';
+  } else if(barnNafn) {
+    // Ekki á ofnæmismatseðli þennan dag = fær aðalréttinn
+    html+='<div class="faer-band adal">';
+    html+='<span class="faer-icon">✅</span>';
+    html+='<span class="faer-title">Aðalréttur</span>';
+    html+='</div>';
+  }
+
+  // Ákvarða hvaða máltíðartegundir á að sýna
+  var faerMeal='Aðalréttur';
+  if(faerInfo){
+    var fn=nm(faerInfo.faer);
+    if(fn.indexOf('hliðar')>=0) faerMeal='Hliðarréttur';
+    else if(fn.indexOf('ofnæmis')>=0||fn.indexOf('ofnaemis')>=0) faerMeal=faerInfo.faer;
+    else if(fn.indexOf('enginn')>=0) faerMeal='';
+  }
+
+  var skoliT=barnData?barnData.tegund==='ls'?'Leikskóli':'Grunnskóli':'Bæði';
+  var skKey=barnData&&barnData.tegund==='ls'?'_skLeik':'_skGrunn';
+  var hasContent=false;
+
+  // Sýna máltíðartegundir
+  var allMeals=['Ávaxtastund',faerMeal,'Meðlæti','Meðlætisbar','Síðdegishressing'];
+
+  allMeals.forEach(function(tegund){
+    if(!tegund)return;
+    var main=mRows.filter(function(r){
+      if(!r._isMain||!r._d||!inWeekRange(r._d,off))return false;
+      if(dayKey(r._d)!==currentDay)return false;
+      if(nm(r._meal)!==nm(tegund))return false;
+      return r._gildir==='Bæði'||nm(r._gildir)===nm(skoliT);
+    });
+    if(!main.length)return;
+
+    var gids={};
+    main.forEach(function(r){gids[r._gid]=true;});
+    var varar=mRows.filter(function(r){return !r._isMain&&gids[r._gid];});
+
+    var mealHtml='';
+    main.forEach(function(m){
+      var dn=m._birting||m._vara||'',gid=m._gid;
+      var vl=varar.filter(function(v){return v._gid===gid;});
+      if(vl.length){
+        var varaHtml=vl.map(function(v){
+          var vdn=v._birting||v._vara,sk=v[skKey];
+          return '<span class="vara-item">'+esc(vdn)+(sk?' <span class="vara-g">('+sk+'g)</span>':'')+'</span>';
+        }).join('');
+        var sn=dn.replace(/\\/g,'\\\\').replace(/'/g,'\\x27');
+        mealHtml+='<div class="dish-group"><div class="dish-name"><span class="clickable" onclick="showGroupModal(\''+sn+'\',\''+gid+'\')">'+esc(dn)+'</span></div><div class="vara-list">'+varaHtml+'</div></div>';
+      } else if(dn){
+        mealHtml+='<div class="dish-group"><div class="dish-name">'+esc(dn)+'</div></div>';
+      }
+    });
+    if(!mealHtml)return;
+    hasContent=true;
+
+    var bIcon=nm(tegund)==='ávaxtastund'?'🍎':nm(tegund)==='síðdegishressing'?'🧃':nm(tegund).indexOf('meðlæti')>=0?'🥗':'🍽️';
+    var bTitle=nm(tegund)==='ávaxtastund'?'Ávaxtastund':nm(tegund)==='síðdegishressing'?'Síðdegisstund':nm(tegund).indexOf('meðlætisbar')>=0?'Meðlætisbar':nm(tegund).indexOf('meðlæti')>=0?'Meðlæti':tegund;
+
+    html+='<section class="band"><h3 class="bandtitle">'+bIcon+' '+esc(bTitle)+'</h3>';
+    if(nm(tegund)==='ávaxtastund'){
+      html+='<div style="font-size:15px">🍎 Ferskir ávextir alla daga</div>';
+    } else {
+      html+=mealHtml;
+    }
+    html+='</section>';
+  });
+
+  if(!hasContent&&faerInfo&&nm(faerInfo.faer).indexOf('enginn')>=0){
+    html+='<div style="text-align:center;padding:30px;color:var(--red);font-weight:700">🔴 Eldhúsið mun útbúa sérrrétt. Hafðu samband við skólann.</div>';
+  } else if(!hasContent){
+    html+='<p style="text-align:center;padding:20px;color:#888">Engar skráðar máltíðar þennan dag.</p>';
+  }
+
+  el.innerHTML=html;
+  document.getElementById('clickHint') && (document.getElementById('clickHint').style.display=hasContent?'block':'none');
+}
+
+function selectDay(dk){
+  currentDay=dk;
+  document.querySelectorAll('.daybtn').forEach(function(b){b.classList.toggle('active',b.getAttribute('onclick').indexOf("'"+dk+"'")>=0);});
+  renderDay();
+}
+
+// INIT
+var barnData=null;
+
+document.addEventListener('DOMContentLoaded',function(){
+  barnId=new URLSearchParams(window.location.search).get('id')||'';
+  if(!barnId){
+    document.getElementById('mainArea').innerHTML='<div class="not-found"><h2>Hlekkur finnst ekki</h2><p>Hafðu samband við skólann þinn.</p></div>';
+    return;
+  }
+
+  updateWeekLabels();
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+  document.getElementById('infoModal').addEventListener('click',function(e){if(e.target===document.getElementById('infoModal'))closeModal();});
+  document.addEventListener('click',function(e){var dd=document.querySelector('.weekdropdown');if(dd&&!dd.contains(e.target))closeWeekMenu();});
+
+  fetch(EXCEL_URL,{cache:'no-store'})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();})
+    .then(function(buf){
+      var wb=XLSX.read(buf,{type:'array',cellDates:false,raw:false});
+
+      // Lesa matseðil
+      mRows=parseMenuRows(XLSX.utils.sheet_to_json(wb.Sheets['Grunnmatseðill'],{header:1,raw:false,defval:''}));
+
+      // Lesa ofnæmismatseðil
+      ofnaemiRows=parseOfnaemismatsedil(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmismatseðill'],{header:1,raw:false,defval:''}));
+
+      // Finna barn
+      barnData=findBarn(wb,barnId);
+
+      if(!barnData){
+        document.getElementById('mainArea').innerHTML='<div class="not-found"><h2>Barn finnst ekki</h2><p>Þessi hlekkur er ekki gildur. Hafðu samband við skólann þinn.</p></div>';
+        return;
+      }
+
+      barnNafn=barnData.nafn;
+
+      // Sýna barnkort
+      document.getElementById('barnKort').style.display='flex';
+      document.getElementById('barnNafn').textContent=barnData.nafn;
+      document.getElementById('barnSkoli').textContent=barnData.skoli+(barnData.deild?' — '+barnData.deild:'');
+
+      var ofnDiv=document.getElementById('barnOfnaemi');
+      if(barnData.ofnaemi){
+        barnData.ofnaemi.split(',').forEach(function(o){
+          o=o.trim();if(!o)return;
+          var tag=document.createElement('span');
+          tag.className='ofn-tag';
+          tag.textContent=o;
+          ofnDiv.appendChild(tag);
+        });
+      }
+
+      // Sýna dagaval
+      document.getElementById('dayNav').style.display='flex';
+
+      // Velja daginn í dag
+      var dk=dayKey(new Date())||'Man';
+      selectDay(dk);
+    })
+    .catch(function(err){
+      document.getElementById('mainArea').innerHTML='<div class="loading">Villa við hleðslu: '+esc(String(err))+'</div>';
+    });
+});
+</script>
+</body>
+</html>
