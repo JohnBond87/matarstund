@@ -101,7 +101,7 @@ tr.gult td{background:#FFFDE7;}
 
   <!-- Skóli/Leikskóli val -->
   <div id="skoliValDiv" style="display:none" class="skolival">
-    <button id="btnGrunn" class="skolibtn" onclick="setSkoliTegund('Grunnskóli')">🏫 Grunnskóli</button>
+    <button id="btnGrunn" class="skolibtn" onclick="setSkoliTegund('Grunnskóli')">🏫 Grunnskóli / Frístund</button>
     <button id="btnLeik" class="skolibtn" onclick="setSkoliTegund('Leikskóli')">🎈 Leikskóli</button>
   </div>
 
@@ -135,7 +135,7 @@ var DNAME={Man:'Mánudagur',Tri:'Þriðjudagur',Mid:'Miðvikudagur',Fim:'Fimmtud
 
 var currentDay='',currentWeekOffset=0,currentSkoliTegund='Leikskóli';
 var mRows=[],ofnaemiRows=[],rbMap={};
-var eldhusId='',eldhusNafn='',tengdirSkolar=[];
+var eldhusId='',eldhusNafn='',tengdirSkolar=[],skolaTegundMap={};
 
 function esc(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function nm(s){return(s||'').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ð/g,'d').replace(/þ/g,'th').replace(/æ/g,'ae').replace(/ö/g,'o');}
@@ -330,21 +330,25 @@ function renderDay(){
       && (skoliT==='Bæði'||r.skoli.indexOf(skoliT==='Leikskóli'?'leiksk':'skóli')>=0||true);
   });
 
-  // Sía eftir skólategund
-  var bornFiltered=born.filter(function(b){
-    if(skoliT==='Leikskóli') return nm(b.skoli).indexOf('leiksk')>=0||nm(b.skoli).indexOf('berg')>=0||nm(b.skoli).indexOf('lund')>=0||nm(b.skoli).indexOf('sel')>=0||nm(b.skoli).indexOf('kot')>=0||nm(b.skoli).indexOf('as')>=0||nm(b.skoli).indexOf('vellir')>=0;
-    return true; // Sýna allt ef við erum ekki viss
-  });
-
-  // Ef við höfum tengda skóla getum við sía nánar
-  var leikskolaNofn=tengdirSkolar.filter(function(s){
-    return nm(s).indexOf('leiksk')>=0||nm(s).indexOf('alfaberg')>=0||nm(s).indexOf('arnarberg')>=0||nm(s).indexOf('hlidarberg')>=0||nm(s).indexOf('horduvellir')>=0||nm(s).indexOf('bjarkalundur')>=0||nm(s).indexOf('norduberg')>=0||nm(s).indexOf('smara')>=0||nm(s).indexOf('stekkjar')>=0||nm(s).indexOf('tjarnar')>=0||nm(s).indexOf('vesturkot')>=0||nm(s).indexOf('vidivellir')>=0||nm(s).indexOf('sel')>=0||nm(s).indexOf('kot')>=0;
-  });
-  var grunnSkolaNofn=tengdirSkolar.filter(function(s){return leikskolaNofn.indexOf(s)<0;});
-
-  var skolaNofn=skoliT==='Leikskóli'?leikskolaNofn:(skoliT==='Grunnskóli'?grunnSkolaNofn:tengdirSkolar);
+  // Sía eftir skólategund með skolaTegundMap
+  var skolaNofn;
+  if(skoliT==='Leikskóli'){
+    // Bara leikskólar
+    skolaNofn=tengdirSkolar.filter(function(s){
+      return (skolaTegundMap[s]||'')==='Leikskóli';
+    });
+  } else if(skoliT==='Grunnskóli'){
+    // Grunnskólar OG frístundaheimili
+    skolaNofn=tengdirSkolar.filter(function(s){
+      var t=skolaTegundMap[s]||'';
+      return t==='Grunnskóli'||t==='Frístundaheimili';
+    });
+  } else {
+    skolaNofn=tengdirSkolar;
+  }
+  if(!skolaNofn.length) skolaNofn=tengdirSkolar;
   var bornSiltered=born.filter(function(b){return skolaNofn.some(function(s){return nm(b.skoli)===nm(s);});});
-  if(!bornSiltered.length)bornSiltered=born; // Fallback
+  if(!bornSiltered.length) bornSiltered=born;
 
   var rautt=bornSiltered.filter(function(b){return nm(b.faer).indexOf('enginn')>=0;});
   var annad=bornSiltered.filter(function(b){return nm(b.faer).indexOf('enginn')<0;});
@@ -428,45 +432,46 @@ function loadAndInit(){
       var slRows=XLSX.utils.sheet_to_json(wb.Sheets['Skólalisti'],{header:1,raw:false,defval:''});
       var aðalSkoli='';
       tengdirSkolar=[];
-
-      // Finna aðalskólann með þennan eldhúshlekk
-      for(var r=2;r<slRows.length;r++){
-        var skoliNafn=cl(slRows[r][0]);
-        var eldhusHlekkur=cl(slRows[r][6]);
-        if(!skoliNafn||!eldhusHlekkur)continue;
-        if(nm(eldhusHlekkur).indexOf(nm(eldhusId))>=0){
-          if(!aðalSkoli){
-            // Ef þessi skóli er tengdur öðrum - nota það nafn
-            var tengdur=cl(slRows[r][3]);
-            aðalSkoli=tengdur||skoliNafn;
-          }
-        }
-      }
+      // {nafn, tegund} - Grunnskóli, Leikskóli, Frístundaheimili
+      skolaTegundMap={}; // Uppfæra global
 
       // Finna alla skóla með sama eldhúshlekk
-      for(var r2=2;r2<slRows.length;r2++){
-        var sn=cl(slRows[r2][0]);
-        var eh=cl(slRows[r2][6]);
+      for(var r=2;r<slRows.length;r++){
+        var sn=cl(slRows[r][0]);
+        var tegund=cl(slRows[r][1]);
+        var tengdur=cl(slRows[r][3]);
+        var eh=cl(slRows[r][6]);
         if(!sn||!eh)continue;
         if(nm(eh).indexOf(nm(eldhusId))>=0){
-          if(tengdirSkolar.indexOf(sn)<0)tengdirSkolar.push(sn);
+          if(tengdirSkolar.indexOf(sn)<0){
+            tengdirSkolar.push(sn);
+            skolaTegundMap[sn]=tegund;
+          }
+          // Nota grunnskólann sem aðalskóla
+          if(tegund==='Grunnskóli'&&!aðalSkoli) aðalSkoli=sn;
         }
       }
+      if(!aðalSkoli&&tengdirSkolar.length) aðalSkoli=tengdirSkolar[0];
 
-      console.log('Aðalskóli:', aðalSkoli, 'Tengdir:', tengdirSkolar);
+      console.log('Aðalskóli:', aðalSkoli, 'Tengdir:', tengdirSkolar, 'Tegundir:', skolaTegundMap);
 
       // Sýna eldhús kort
       document.getElementById('eldhusKort').style.display='flex';
-      document.getElementById('eldhusNafn').textContent='🍳 Eldhús — '+( aðalSkoli||eldhusId);
+      document.getElementById('eldhusNafn').textContent='🍳 Eldhús — '+(aðalSkoli||eldhusId);
       document.getElementById('eldhusSub').textContent='Þjónar: '+tengdirSkolar.join(', ');
 
       // Sýna skóli/leikskóli val ef bæði eru til
-      var hasLeik=tengdirSkolar.some(function(s){return nm(s).indexOf('leiksk')>=0||nm(s).indexOf('alfaberg')>=0||nm(s).indexOf('arnarberg')>=0||nm(s).indexOf('sel')>=0||nm(s).indexOf('kot')>=0;});
-      var hasGrunn=tengdirSkolar.some(function(s){return nm(s).indexOf('skoli')>=0&&nm(s).indexOf('leiksk')<0;});
+      var hasLeik=tengdirSkolar.some(function(s){
+        return (skolaTegundMap[s]||'')==='Leikskóli';
+      });
+      var hasGrunn=tengdirSkolar.some(function(s){
+        var t=skolaTegundMap[s]||'';
+        return t==='Grunnskóli'||t==='Frístundaheimili';
+      });
 
       if(hasLeik&&hasGrunn){
         document.getElementById('skoliValDiv').style.display='flex';
-        setSkoliTegund('Leikskóli');
+        setSkoliTegund('Grunnskóli'); // Byrja á grunnskóla flipanum
       } else if(hasLeik){
         currentSkoliTegund='Leikskóli';
       } else {
