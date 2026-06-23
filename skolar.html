@@ -219,11 +219,11 @@ function renderDay(){
     html+='<div class="matsedill-box"><div class="matsedill-title">🍽️ Matseðill þennan dag</div>'+matsedillHtml+'</div>';
   }
 
-  // Finna dagsetningarstreng
-  var dagStr='';
-  if(dt){
-    dagStr=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
-  }
+  // Reikna dagsetninguna beint út frá völdum degi og viku
+  var wr=weekRange(off);
+  var dayNums={Man:0,Tri:1,Mid:2,Fim:3,Fos:4};
+  var dagDate=addDays(wr.start,dayNums[currentDay]);
+  var dagStr=dagDate.getFullYear()+'-'+String(dagDate.getMonth()+1).padStart(2,'0')+'-'+String(dagDate.getDate()).padStart(2,'0');
 
   // Finna öll börn í þessum skóla sem eru á ofnæmismatseðlinum þennan dag
   var born=ofnaemiRows.filter(function(r){
