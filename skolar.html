@@ -227,7 +227,7 @@ function renderDay(){
 
   // Finna öll börn í þessum skóla sem eru á ofnæmismatseðlinum þennan dag
   var born=ofnaemiRows.filter(function(r){
-    return nm(r.skoli).indexOf(nm(skoliId))>=0 && r.dag===dagStr;
+    return nm(skoliId).indexOf(nm(r.skoli))>=0 && r.dag===dagStr;
   });
 
   // Flokka eftir hvað þau fá
@@ -307,13 +307,13 @@ function loadAndInit(){
       // Finna skólanafn
       var skolaNofn=[];
       ofnaemiRows.forEach(function(r){if(r.skoli&&skolaNofn.indexOf(r.skoli)<0)skolaNofn.push(r.skoli);});
-      var skoliNafn=skolaNofn.find(function(s){return nm(s).indexOf(nm(skoliId))>=0;})||skoliId;
+      var skoliNafn=skolaNofn.find(function(s){return nm(skoliId).indexOf(nm(s))>=0;})||skoliId;
 
       // Sýna skóli kort
       document.getElementById('skoliKort').style.display='block';
       document.getElementById('skoliNafn').textContent='🏫 '+skoliNafn;
 
-      var allBorn=ofnaemiRows.filter(function(r){return nm(r.skoli).indexOf(nm(skoliId))>=0;});
+      var allBorn=ofnaemiRows.filter(function(r){return nm(skoliId).indexOf(nm(r.skoli))>=0;});
       var fjoldi=[...new Set(allBorn.map(function(r){return r.nafn;}))].length;
       document.getElementById('skoliSub').textContent=fjoldi+' börn með sérfæðisþarfir skráðar';
 
