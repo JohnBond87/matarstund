@@ -410,8 +410,13 @@ function renderHadegi(off, ds, skolaNofn){
   html+='</div>'; // lok grid
 
   // SÉRFÆÐISLISTI
+  // Sýna bara börn sem fá EKKI aðalréttinn
   var born=ofnaemiRows.filter(function(r){
-    return r.dag===ds && skolaNofn.some(function(s){return nm(r.skoli)===nm(s);});
+    if(r.dag!==ds) return false;
+    if(!skolaNofn.some(function(s){return nm(r.skoli)===nm(s);})) return false;
+    // Sía út börn sem fá aðalréttinn
+    var fn=nm(r.faer);
+    return fn.indexOf('adal')<0&&fn.indexOf('aðal')<0;
   });
   html+=renderOfnaemiTafla(born);
   return html;
