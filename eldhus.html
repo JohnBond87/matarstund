@@ -149,7 +149,7 @@ var currentSkoliTegund='Grunnskóli'; // 'Grunnskóli' eða 'Leikskóli'
 var currentMaltid='hadegi'; // 'hadegi' eða 'hressing'
 
 // Gögn
-var mRows=[], ofnaemiRows=[], rbMap={};
+var mRows=[], ofnaemiRows=[], ofnaemiSidegiRows=[], rbMap={};
 var tengdirSkolar=[], skolaTegundMap={}, eldhusForskeyti='';
 
 // ═══ HJÁLPARFÖLL ═══
@@ -291,15 +291,45 @@ function parseRB(rows){
   return map;
 }
 
+function normDag(d){
+  // Meðhöndla mismunandi dagsetningarsnið
+  if(!d) return '';
+  var s=cl(d);
+  // datetime: "2026-06-22 00:00:00" -> "2026-06-22"
+  if(s.indexOf(' ')>0) s=s.split(' ')[0];
+  // ISO: "2026-06-22T00:00:00" -> "2026-06-22"
+  if(s.indexOf('T')>0) s=s.split('T')[0];
+  return s.substring(0,10);
+}
+
 function parseOfnaemi(rows){
   var list=[],hi=-1;
   for(var i=0;i<rows.length;i++){if(nm(cl(rows[i][0]))==='dagsetning'){hi=i;break;}}
   if(hi<0)return list;
   for(var r=hi+1;r<rows.length;r++){
-    var dag=cl(rows[r][0]),skoli=cl(rows[r][1]),nafn=cl(rows[r][2]);
+    var dag=normDag(rows[r][0]),skoli=cl(rows[r][1]),nafn=cl(rows[r][2]);
     var deild=cl(rows[r][3]),ofn=cl(rows[r][4]),ath=cl(rows[r][5]),faer=cl(rows[r][6]);
-    if(!nafn||!dag)continue;
+    // Sleppa skólahauslínum (þær hafa 📍 í skólanafni)
+    if(!nafn||!dag||skoli.indexOf('📍')>=0)continue;
     list.push({dag:dag,skoli:skoli,nafn:nafn,deild:deild,ofnaemi:ofn,ath:ath,faer:faer});
+  }
+  return list;
+}
+
+function parseOfnaemiSidegi(rows){
+  // Ofnæmismatseðill síðdegi: C1=skoli, C2=nafn, C3=deild, C4=ofn, C5=ath
+  // Hausalínan er í R3 (index 2)
+  var list=[],hi=-1;
+  for(var i=0;i<rows.length;i++){
+    if(nm(cl(rows[i][0])).indexOf('skoli')>=0||nm(cl(rows[i][0])).indexOf('skóli')>=0){hi=i;break;}
+  }
+  if(hi<0)return list;
+  for(var r=hi+1;r<rows.length;r++){
+    var skoli=cl(rows[r][0]),nafn=cl(rows[r][1]);
+    var deild=cl(rows[r][2]),ofn=cl(rows[r][3]),ath=cl(rows[r][4]);
+    // Sleppa skólahauslínum
+    if(!nafn||skoli.indexOf('📍')>=0)continue;
+    list.push({skoli:skoli,nafn:nafn,deild:deild,ofnaemi:ofn,ath:ath});
   }
   return list;
 }
@@ -423,30 +453,23 @@ function renderHadegi(off, ds, skolaNofn){
 }
 
 function renderHressing(ds, skolaNofn){
-  // Sýna bara hverjir þurfa sérfæðisutgáfu af hressingunni
   var html='<div class="tafla-kassi">';
   html+='<div class="tafla-titill">🧃 Síðdegishressing — Sérfæðisþarfir</div>';
 
-  // Leita í ofnæmismatseðli eftir hressingu
-  var born=ofnaemiRows.filter(function(r){
-    return r.dag===ds && skolaNofn.some(function(s){return nm(r.skoli)===nm(s);})
-      && nm(r.faer).indexOf('hressing')>=0;
+  // Lesa úr Ofnæmismatseðill síðdegi blaðinu
+  var born=ofnaemiSidegiRows.filter(function(r){
+    return skolaNofn.some(function(s){return nm(r.skoli)===nm(s);});
   });
 
   if(!born.length){
-    // Athuga alla með ofnæmi og merkja þá sem gætu þurft sérhressingu
-    var allOfn=ofnaemiRows.filter(function(r){
-      return r.dag===ds && skolaNofn.some(function(s){return nm(r.skoli)===nm(s);});
-    });
-
-    if(!allOfn.length){
-      html+='<div class="empty">✅ Enginn þarf sérstaka hressingu þennan dag.</div>';
-    } else {
-      html+='<p style="font-size:13px;color:#666;margin:0 0 10px">Eftirfarandi börn eru með skráðar sérfæðisþarfir — athugaðu hvort hressing þennan dag hentar þeim:</p>';
-      html+=buildTafla(allOfn);
-    }
+    html+='<div class="empty">✅ Engin sérfæðisþarfir skráðar.</div>';
   } else {
-    html+=buildTafla(born);
+    html+='<p style="font-size:13px;color:#666;margin:0 0 10px">Börn með sérfæðisþarfir — athugaðu hvort hressing þennan dag hentar þeim:</p>';
+    // Breyta í format sem buildTafla skilur
+    var bornFormatted=born.map(function(b){
+      return {nafn:b.nafn,deild:b.deild,skoli:b.skoli,ofnaemi:b.ofnaemi,ath:b.ath,faer:''};
+    });
+    html+=buildTafla(bornFormatted);
   }
 
   html+='</div>';
@@ -532,6 +555,7 @@ function load(){
       mRows=parseMenu(sheetArr(wb,'Grunnmatseðill'));
       rbMap=parseRB(sheetArr(wb,'Réttabanki'));
       ofnaemiRows=parseOfnaemi(sheetArr(wb,'Ofnæmismatseðill'));
+      ofnaemiSidegiRows=parseOfnaemiSidegi(sheetArr(wb,'Ofnæmismatseðill síðdegi'));
       var slList=parseSkólalisti(sheetArr(wb,'Skólalisti'));
 
       // Finna forskeyti þessa eldhúss
