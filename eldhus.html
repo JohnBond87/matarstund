@@ -292,8 +292,15 @@ function parseRB(rows){
 }
 
 function normDag(d){
-  // Meðhöndla mismunandi dagsetningarsnið
   if(!d) return '';
+  // Excel serial number -> dagsetning
+  if(typeof d==='number'&&d>1000){
+    var dt=new Date(Math.round((d-25569)*86400*1000));
+    dt.setUTCHours(0,0,0,0);
+    return dt.getUTCFullYear()+'-'
+      +String(dt.getUTCMonth()+1).padStart(2,'0')+'-'
+      +String(dt.getUTCDate()).padStart(2,'0');
+  }
   var s=cl(d);
   // datetime: "2026-06-22 00:00:00" -> "2026-06-22"
   if(s.indexOf(' ')>0) s=s.split(' ')[0];
@@ -456,10 +463,11 @@ function renderHressing(ds, skolaNofn){
   var html='<div class="tafla-kassi">';
   html+='<div class="tafla-titill">🧃 Síðdegishressing — Sérfæðisþarfir</div>';
 
-  // Lesa úr Ofnæmismatseðill síðdegi blaðinu
+  // Lesa úr Ofnæmismatseðill síðdegi blaðinu - sía eftir skóla
   var born=ofnaemiSidegiRows.filter(function(r){
     return skolaNofn.some(function(s){return nm(r.skoli)===nm(s);});
   });
+  console.log('Síðdegi born:', born.length, 'skolaNofn:', skolaNofn);
 
   if(!born.length){
     html+='<div class="empty">✅ Engin sérfæðisþarfir skráðar.</div>';
