@@ -485,7 +485,7 @@ document.addEventListener('DOMContentLoaded',function(){
       mRows=parseMenuRows(XLSX.utils.sheet_to_json(wb.Sheets['Grunnmatseðill'],{header:1,raw:false,defval:''}));
 
       // Lesa ofnæmismatseðil
-      ofnaemiRows=parseOfnaemismatsedil(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmismatseðill'],{header:1,raw:false,defval:''}));
+      ofnaemiRows=parseOfnaemismatsedil(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmisgögn'],{header:1,raw:false,defval:''}));
 
       // Finna barn
       barnData=findBarn(wb,barnId);

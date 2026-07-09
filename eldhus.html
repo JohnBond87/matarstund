@@ -494,8 +494,8 @@ function load(){
       var msRows=XLSX.utils.sheet_to_json(wb.Sheets['Grunnmatseðill'],{header:1,raw:false,defval:''});
       mRows=parseMenuRows(msRows);
       leidMap=parseLeidMap(msRows);
-      ofnaemiHadegi=parseOfnaemiArray(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmismatseðill'],{header:1,raw:false,defval:''}));
-      ofnaemiSidegi=parseOfnaemiSidegi(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmismatseðill síðdegi'],{header:1,raw:false,defval:''}));
+      ofnaemiHadegi=parseOfnaemiArray(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmisgögn'],{header:1,raw:false,defval:''}));
+      ofnaemiSidegi=parseOfnaemiSidegi(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmisgögn síðdegi'],{header:1,raw:false,defval:''}));
       var slList=parseSkólalisti(XLSX.utils.sheet_to_json(wb.Sheets['Skólalisti'],{header:1,raw:false,defval:''}));
 
       eldhusForskeyti='';
