@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ofnæmis-prófunartæki — Matarstund</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Bodoni+Moda:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#D81E30;--cream:#FDF8E2;--green:#39552C;--purple:#4A148C;--soft:rgba(57,85,44,.06);--line:rgba(57,85,44,.18);}
+*{box-sizing:border-box;}
+body{font-family:Manrope,Arial,sans-serif;background:var(--cream);margin:0;color:#222;line-height:1.45;}
+.wrap{max-width:1200px;margin:0 auto;padding:20px 16px 60px;}
+header.top{margin-bottom:8px;}
+h1{font-family:"Bodoni Moda",serif;color:var(--red);font-size:38px;margin:0 0 2px;text-transform:uppercase;letter-spacing:.5px;}
+.sub{color:var(--green);font-weight:700;margin:0 0 4px;}
+.hint{color:#555;font-size:14px;margin:0 0 16px;max-width:760px;}
+.status{font-size:14px;font-weight:700;padding:8px 14px;border-radius:999px;display:inline-block;margin-bottom:16px;}
+.status.load{background:#fff3cd;color:#7a5b00;}
+.status.ok{background:#d7ecd0;color:var(--green);}
+.status.err{background:#f8d7da;color:#842029;}
+
+.layout{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+@media(max-width:820px){.layout{grid-template-columns:1fr;}}
+
+.panel{background:#fff;border:2px solid var(--green);border-radius:18px;padding:16px 18px;}
+.panel h2{font-family:"Bodoni Moda",serif;color:var(--green);font-size:20px;margin:0 0 4px;}
+.group{margin-bottom:18px;}
+.group:last-child{margin-bottom:0;}
+.grouphead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
+.grouptitle{font-weight:800;color:var(--purple);font-size:15px;}
+.miniactions{display:flex;gap:6px;}
+.mini{font-family:inherit;font-size:11px;font-weight:700;border:1.5px solid var(--line);background:var(--cream);color:var(--green);border-radius:999px;padding:3px 9px;cursor:pointer;}
+.mini:hover{background:var(--green);color:#fff;border-color:var(--green);}
+
+.checklist{max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:6px 8px;background:#fffdf6;}
+.checklist.short{max-height:150px;}
+label.chk{display:flex;align-items:center;gap:8px;padding:4px 4px;font-size:14px;cursor:pointer;border-radius:8px;}
+label.chk:hover{background:var(--soft);}
+label.chk input{width:16px;height:16px;accent-color:var(--red);cursor:pointer;flex:none;}
+.empty-note{color:#888;font-size:13px;padding:6px 4px;font-style:italic;}
+
+.results-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:10px;}
+.results-head h2{font-family:"Bodoni Moda",serif;color:var(--red);font-size:24px;margin:0;}
+.count{background:var(--red);color:#fff;border-radius:999px;padding:2px 12px;font-weight:800;font-size:14px;}
+.togglebtn{margin-left:auto;font-family:inherit;font-weight:700;font-size:13px;border:2px solid var(--purple);color:var(--purple);background:#fff;border-radius:999px;padding:7px 14px;cursor:pointer;}
+.togglebtn:hover,.togglebtn.on{background:var(--purple);color:#fff;}
+
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);font-size:14px;}
+th{background:var(--green);color:#fff;text-align:left;padding:9px 10px;font-size:13px;font-weight:700;position:sticky;top:0;}
+td{padding:9px 10px;border-top:1px solid var(--line);vertical-align:top;}
+tr:nth-child(even) td{background:#faf7ec;}
+.tag{display:inline-block;font-size:12px;font-weight:700;border-radius:8px;padding:2px 7px;margin:1px 3px 1px 0;background:var(--soft);color:var(--green);}
+.tag.match{background:var(--red);color:#fff;}
+.tag.stadf{background:#fff;color:var(--purple);border:1.5px solid var(--purple);}
+.stadf-flag{color:var(--purple);font-weight:800;}
+.ath{color:#555;font-size:13px;}
+.big-empty{background:#fff;border:2px dashed var(--line);border-radius:16px;padding:40px 20px;text-align:center;color:#888;}
+.big-empty strong{display:block;color:var(--green);font-size:16px;margin-bottom:4px;}
+.skoli-block{margin-bottom:22px;}
+.skoli-head{display:flex;align-items:center;gap:10px;background:var(--green);color:#fff;border-radius:12px 12px 0 0;padding:9px 14px;font-family:"Bodoni Moda",serif;font-size:19px;}
+.skoli-head .n{background:#fff;color:var(--green);border-radius:999px;padding:1px 10px;font-family:Manrope,sans-serif;font-weight:800;font-size:13px;}
+.skoli-block table{border-radius:0 0 14px 14px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.skoli-block th{background:var(--green);}
+.legend{font-size:12px;color:#666;margin-top:10px;}
+.legend .tag{font-size:11px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Ofnæmis-prófun</h1>
+    <p class="sub">Öryggisventill · les sömu nemendaskrá og kerfið</p>
+    <p class="hint">Hakaðu í ofnæmi og veldu skóla til að sjá hvaða börn eru skráð með þau ofnæmi. Barn birtist ef það hefur <b>eitthvað</b> af völdu ofnæmunum. Berðu saman við það sem kerfið gerir sjálfkrafa.</p>
+    <span id="status" class="status load">Sæki nemendaskrá…</span>
+  </header>
+
+  <div class="layout">
+    <!-- Vinstri: stjórn -->
+    <div class="panel">
+      <div class="group">
+        <div class="grouphead">
+          <span class="grouptitle">Ofnæmi / óþol</span>
+          <div class="miniactions">
+            <button class="mini" onclick="velja('ofn',true)">Velja allt</button>
+            <button class="mini" onclick="velja('ofn',false)">Tæma</button>
+          </div>
+        </div>
+        <div id="ofnList" class="checklist"><div class="empty-note">Hleð…</div></div>
+      </div>
+
+      <div class="group">
+        <div class="grouphead">
+          <span class="grouptitle">Leikskólar</span>
+          <div class="miniactions">
+            <button class="mini" onclick="velja('leik',true)">Velja alla</button>
+            <button class="mini" onclick="velja('leik',false)">Tæma</button>
+          </div>
+        </div>
+        <div id="leikList" class="checklist short"><div class="empty-note">Hleð…</div></div>
+      </div>
+
+      <div class="group">
+        <div class="grouphead">
+          <span class="grouptitle">Grunnskólar</span>
+          <div class="miniactions">
+            <button class="mini" onclick="velja('grunn',true)">Velja alla</button>
+            <button class="mini" onclick="velja('grunn',false)">Tæma</button>
+          </div>
+        </div>
+        <div id="grunnList" class="checklist short"><div class="empty-note">Hleð…</div></div>
+      </div>
+
+      <div class="group">
+        <div class="grouphead">
+          <span class="grouptitle">Frístundaheimili</span>
+          <div class="miniactions">
+            <button class="mini" onclick="velja('frist',true)">Velja alla</button>
+            <button class="mini" onclick="velja('frist',false)">Tæma</button>
+          </div>
+        </div>
+        <div id="fristList" class="checklist short"><div class="empty-note">Hleð…</div></div>
+        <div class="legend">Sýnir aðeins börn með <b>Frístund = Já</b> í völdum skóla. (Tómt þar til skráning kemur í haust.)</div>
+      </div>
+
+      <div class="group" id="deildGroup" style="display:none;">
+        <div class="grouphead">
+          <span class="grouptitle">Deildir / bekkir</span>
+          <div class="miniactions">
+            <button class="mini" onclick="velja('deild',true)">Velja allar</button>
+            <button class="mini" onclick="velja('deild',false)">Tæma</button>
+          </div>
+        </div>
+        <div id="deildList" class="checklist short"></div>
+        <div class="legend">Birtir deildir/bekki úr völdum skólum. Engin valin = allar deildir.</div>
+      </div>
+    </div>
+
+    <!-- Hægri: niðurstöður -->
+    <div>
+      <div class="results-head">
+        <h2>Niðurstöður</h2>
+        <span id="count" class="count">0</span>
+        <button id="fyrirBtn" class="togglebtn" onclick="toggleFyrir()">Sýna fyrirmæli</button>
+      </div>
+      <div id="results"></div>
+      <div class="legend">
+        <span class="tag match">Rautt</span> = ofnæmi sem passaði við valið &nbsp;·&nbsp;
+        <span class="tag stadf">Staðfesta</span> = kokkur þarf að staðfesta (skilyrt athugasemd)
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var EXCEL_URL='https://johnbond87.github.io/matarstund/Matsedill.xlsx';
+
+// hjálp
+function cl(v){return (v===null||v===undefined)?'':String(v).trim();}
+function nm(s){return cl(s).toLowerCase()
+  .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u').replace(/ý/g,'y')
+  .replace(/þ/g,'th').replace(/æ/g,'ae').replace(/ö/g,'o').replace(/ð/g,'d').trim();}
+function sheetRows(wb,name){var ws=wb.Sheets[name];if(!ws)return[];return XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});}
+
+// Les nýju Nemendaskrá-uppbygginguna: haus (nafn í dálki 1), 20 ofnæmis-þrennur.
+function parseNemendur(rows,tegund){
+  var out=[],hidx=-1;
+  for(var i=0;i<rows.length;i++){if(nm(rows[i][1])==='nafn'){hidx=i;break;}}
+  if(hidx<0)return out;
+  var H=rows[hidx].map(function(h){return nm(h);});
+  function col(){for(var a=0;a<arguments.length;a++){for(var c=0;c<H.length;c++){if(H[c].indexOf(arguments[a])>=0)return c;}}return -1;}
+  var cSkoli=col('skoli'),cNafn=col('nafn'),cDeild=col('deild','bekkur'),
+      cFrist=col('fristund'),cFyrir=col('fyrirmaeli');
+  // finna alla ofnæmis-dálka (haus byrjar á "ofnaemi")
+  var ofnCols=[];
+  for(var c=0;c<H.length;c++){ if(/^ofnaemi\s*\d+/.test(H[c])||H[c]==='ofnaemi') ofnCols.push(c); }
+  for(var r=hidx+1;r<rows.length;r++){
+    var nafn=cl(rows[r][cNafn]);if(!nafn)continue;
+    var alls=[];
+    for(var k=0;k<ofnCols.length;k++){
+      var oc=ofnCols[k];
+      var of=cl(rows[r][oc]);if(!of)continue;
+      var at=cl(rows[r][oc+1]);
+      var st=cl(rows[r][oc+2]);
+      alls.push({ofn:of,ath:at,stadf:st});
+    }
+    var fyrir=cFyrir>=0?cl(rows[r][cFyrir]):'';
+    if(alls.length===0 && !fyrir) continue;
+    out.push({
+      skoli:cSkoli>=0?cl(rows[r][cSkoli]):'',
+      nafn:nafn,
+      deild:cDeild>=0?cl(rows[r][cDeild]):'',
+      frist:cFrist>=0?cl(rows[r][cFrist]):'',
+      fyrirmaeli:fyrir,
+      ofnaemi:alls,
+      tegund:tegund
+    });
+  }
+  return out;
+}
+
+var NEM=[];          // allir nemendur
+var OFN_ALLIR=[];    // öll einstök ofnæmi (birtingarform)
+var SKOLAR={leik:[],grunn:[]}; // skólanöfn
+var valOfn={},valLeik={},valGrunn={},valFrist={},valDeild={}; // hökuð gildi (normalizað lykill)
+var DEILDIR_NU=[];
+var fyrirMode=false;
+
+function setStatus(txt,cls){var s=document.getElementById('status');s.textContent=txt;s.className='status '+cls;}
+
+fetch(EXCEL_URL+'?v='+Date.now(),{cache:'no-store'})
+  .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();})
+  .then(function(buf){
+    var wb=XLSX.read(buf,{type:'array',cellDates:false,raw:false});
+    var ls=parseNemendur(sheetRows(wb,'Nemendaskrá — Leikskólar'),'ls');
+    var gs=parseNemendur(sheetRows(wb,'Nemendaskrá — Grunnskólar'),'gs');
+    NEM=ls.concat(gs);
+    byggjaListar(ls,gs);
+    setStatus('Nemendaskrá sótt · '+NEM.length+' börn með ofnæmi eða fyrirmæli',' ok');
+    render();
+  })
+  .catch(function(e){
+    setStatus('Villa við að sækja nemendaskrá: '+e.message,'err');
+  });
+
+function byggjaListar(ls,gs){
+  // ofnæmi (einstök, birtingarform)
+  var seen={};
+  NEM.forEach(function(n){n.ofnaemi.forEach(function(a){var k=nm(a.ofn);if(!seen[k]){seen[k]=a.ofn;}});});
+  OFN_ALLIR=Object.keys(seen).map(function(k){return seen[k];}).sort(function(a,b){return a.localeCompare(b,'is');});
+  // skólar
+  function uniqSkolar(arr){var s={};arr.forEach(function(n){if(n.skoli)s[n.skoli]=1;});return Object.keys(s).sort(function(a,b){return a.localeCompare(b,'is');});}
+  SKOLAR.leik=uniqSkolar(ls);
+  SKOLAR.grunn=uniqSkolar(gs);
+
+  // teikna hök
+  teiknaChecklist('ofnList',OFN_ALLIR,valOfn,'Engin ofnæmi skráð',render);
+  teiknaChecklist('leikList',SKOLAR.leik,valLeik,'Engir leikskólar',skoliBreyttist);
+  teiknaChecklist('grunnList',SKOLAR.grunn,valGrunn,'Engir grunnskólar',skoliBreyttist);
+  teiknaChecklist('fristList',SKOLAR.grunn,valFrist,'Engir grunnskólar',skoliBreyttist); // frístund notar grunnskólanöfn
+}
+
+// Kallað þegar skólaval breytist: endurbyggja deilda-lista + uppfæra niðurstöður
+function skoliBreyttist(){ uppfaeraDeildir(); render(); }
+
+// Byggja deilda-lista úr börnum í völdum skólum (kvikt)
+function uppfaeraDeildir(){
+  var grp=document.getElementById('deildGroup');
+  var einhverSkoli=eitthvadValid(valLeik)||eitthvadValid(valGrunn)||eitthvadValid(valFrist);
+  if(!einhverSkoli){grp.style.display='none';DEILDIR_NU=[];return;}
+  var seen={};
+  NEM.forEach(function(n){ if(iSkola(n) && n.deild) seen[n.deild]=1; });
+  var deildir=Object.keys(seen).sort(function(a,b){return a.localeCompare(b,'is');});
+  // hreinsa valdar deildir sem eru ekki lengur sýnilegar
+  var valid={};deildir.forEach(function(d){valid[nm(d)]=1;});
+  Object.keys(valDeild).forEach(function(k){if(!valid[k])delete valDeild[k];});
+  DEILDIR_NU=deildir;
+  if(!deildir.length){grp.style.display='none';return;}
+  grp.style.display='';
+  teiknaChecklist('deildList',deildir,valDeild,'',render);
+}
+
+// Er nemandi í valinni deild? (engin deild valin -> allar)
+function iDeild(n){
+  if(!eitthvadValid(valDeild)) return true;
+  return !!valDeild[nm(n.deild)];
+}
+
+function teiknaChecklist(id,items,store,tomTxt,cb){
+  cb=cb||render;
+  var box=document.getElementById(id);
+  if(!items.length){box.innerHTML='<div class="empty-note">'+tomTxt+'</div>';return;}
+  box.innerHTML='';
+  items.forEach(function(it){
+    var key=nm(it);
+    var lab=document.createElement('label');lab.className='chk';
+    var chkbox=document.createElement('input');chkbox.type='checkbox';chkbox.checked=!!store[key];
+    chkbox.onchange=function(){store[key]=chkbox.checked;cb();};
+    lab.appendChild(chkbox);
+    var sp=document.createElement('span');sp.textContent=it;lab.appendChild(sp);
+    box.appendChild(lab);
+  });
+}
+
+function velja(hopur,gildi){
+  var isSkoli=(hopur==='leik'||hopur==='grunn'||hopur==='frist');
+  var cb=isSkoli?skoliBreyttist:render;
+  var map={ofn:{items:OFN_ALLIR,store:valOfn,id:'ofnList'},
+           leik:{items:SKOLAR.leik,store:valLeik,id:'leikList'},
+           grunn:{items:SKOLAR.grunn,store:valGrunn,id:'grunnList'},
+           frist:{items:SKOLAR.grunn,store:valFrist,id:'fristList'},
+           deild:{items:DEILDIR_NU,store:valDeild,id:'deildList'}};
+  var m=map[hopur];if(!m)return;
+  m.items.forEach(function(it){m.store[nm(it)]=gildi;});
+  teiknaChecklist(m.id,m.items,m.store,'',cb);
+  cb();
+}
+
+function eitthvadValid(store){for(var k in store){if(store[k])return true;}return false;}
+
+// Er nemandi í völdum skólum?
+function iSkola(n){
+  if(n.tegund==='ls') return !!valLeik[nm(n.skoli)];
+  // grunnskóli: annaðhvort í grunnskóla-vali, eða frístund-vali (og Frístund=Já)
+  if(valGrunn[nm(n.skoli)]) return true;
+  if(valFrist[nm(n.skoli)] && nm(n.frist)==='ja') return true;
+  return false;
+}
+
+function toggleFyrir(){
+  fyrirMode=!fyrirMode;
+  document.getElementById('fyrirBtn').classList.toggle('on',fyrirMode);
+  document.getElementById('fyrirBtn').textContent=fyrirMode?'Sýna ofnæmi':'Sýna fyrirmæli';
+  render();
+}
+
+function render(){
+  var res=document.getElementById('results');
+  var cnt=document.getElementById('count');
+  var einhverSkoli=eitthvadValid(valLeik)||eitthvadValid(valGrunn)||eitthvadValid(valFrist);
+
+  // FYRIRMÆLI-hamur
+  if(fyrirMode){
+    var born=NEM.filter(function(n){return n.fyrirmaeli && (!einhverSkoli || (iSkola(n) && iDeild(n)));});
+    cnt.textContent=born.length;
+    if(!born.length){res.innerHTML=tomBox('Engin fyrirmæli','Engin börn með fyrirmæli'+(einhverSkoli?' í völdum skólum':'')+'.');return;}
+    var hopar=hoppaEftirSkola(born);
+    var h='';
+    hopar.forEach(function(g){
+      h+='<div class="skoli-block"><div class="skoli-head">'+esc(g.skoli)+' <span class="n">'+g.born.length+'</span></div>'
+        +'<table><thead><tr><th>Deild/Bekkur</th><th>Nafn</th><th>Fyrirmæli</th></tr></thead><tbody>';
+      g.born.forEach(function(n){
+        h+='<tr><td>'+esc(n.deild)+'</td><td><b>'+esc(n.nafn)+'</b></td><td>'+esc(n.fyrirmaeli)+'</td></tr>';
+      });
+      h+='</tbody></table></div>';
+    });
+    res.innerHTML=h;
+    return;
+  }
+
+  // OFNÆMIS-hamur
+  var einhverOfn=eitthvadValid(valOfn);
+  if(!einhverOfn){res.innerHTML=tomBox('Veldu ofnæmi','Hakaðu í eitt eða fleiri ofnæmi vinstra megin til að byrja.');cnt.textContent=0;return;}
+  if(!einhverSkoli){res.innerHTML=tomBox('Veldu skóla','Hakaðu í einn eða fleiri skóla til að sjá börnin.');cnt.textContent=0;return;}
+
+  var nidur=[];
+  NEM.forEach(function(n){
+    if(!iSkola(n))return;
+    if(!iDeild(n))return;
+    var passa=n.ofnaemi.filter(function(a){return valOfn[nm(a.ofn)];});
+    if(passa.length===0)return;
+    nidur.push({n:n,passa:passa});
+  });
+  cnt.textContent=nidur.length;
+  if(!nidur.length){res.innerHTML=tomBox('Engin börn','Engin börn með valin ofnæmi í völdum skólum.');return;}
+
+  // hópa eftir skóla
+  var bySkoli={},rod=[];
+  nidur.forEach(function(row){var s=row.n.skoli||'(án skóla)';if(!bySkoli[s]){bySkoli[s]=[];rod.push(s);}bySkoli[s].push(row);});
+  rod.sort(function(a,b){return a.localeCompare(b,'is');});
+  var h='';
+  rod.forEach(function(s){
+    var raðir=bySkoli[s].sort(function(a,b){return a.n.nafn.localeCompare(b.n.nafn,'is');});
+    h+='<div class="skoli-block"><div class="skoli-head">'+esc(s)+' <span class="n">'+raðir.length+'</span></div>'
+      +'<table><thead><tr><th>Deild/Bekkur</th><th>Nafn</th><th>Ofnæmi</th><th>Athugasemd</th></tr></thead><tbody>';
+    raðir.forEach(function(row){
+      var n=row.n;
+      var passaSet={};row.passa.forEach(function(a){passaSet[nm(a.ofn)]=1;});
+      var ofnHtml='',athHtml=[];
+      n.ofnaemi.forEach(function(a){
+        var er=passaSet[nm(a.ofn)];
+        var stadf=nm(a.stadf)==='ja';
+        ofnHtml+='<span class="tag'+(er?' match':'')+'">'+esc(a.ofn)+(stadf?' <span class="stadf-flag">⚠</span>':'')+'</span>';
+        if(a.ath) athHtml.push('<b>'+esc(a.ofn)+':</b> '+esc(a.ath)+(stadf?' <span class="tag stadf">Staðfesta</span>':''));
+      });
+      h+='<tr><td>'+esc(n.deild)+'</td><td><b>'+esc(n.nafn)+'</b></td>'
+        +'<td>'+ofnHtml+'</td><td class="ath">'+(athHtml.join('<br>')||'—')+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  });
+  res.innerHTML=h;
+}
+
+function byrSkoli(a,b){var s=a.skoli.localeCompare(b.skoli,'is');return s!==0?s:a.nafn.localeCompare(b.nafn,'is');}
+function hoppaEftirSkola(born){
+  var by={},rod=[];
+  born.forEach(function(n){var s=n.skoli||'(án skóla)';if(!by[s]){by[s]=[];rod.push(s);}by[s].push(n);});
+  rod.sort(function(a,b){return a.localeCompare(b,'is');});
+  return rod.map(function(s){return {skoli:s,born:by[s].sort(function(a,b){return a.nafn.localeCompare(b.nafn,'is');})};});
+}
+function tomBox(t,d){return '<div class="big-empty"><strong>'+esc(t)+'</strong>'+esc(d)+'</div>';}
+function esc(s){return cl(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>
