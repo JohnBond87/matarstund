@@ -143,7 +143,7 @@ body{font-family:Manrope,Arial,sans-serif;background:var(--cream);margin:0;color
 </div>
 
 <script>
-var EXCEL_URL='https://johnbond87.github.io/matarstund/Matarstund_v12.xlsx';
+var EXCEL_URL='https://raw.githubusercontent.com/JohnBond87/matarstund/main/Matsedill.xlsx';
 var MONTHS=['janúar','febrúar','mars','apríl','maí','júní','júlí','ágúst','september','október','nóvember','desember'];
 var DNAME={Man:'Mánudagur',Tri:'Þriðjudagur',Mid:'Miðvikudagur',Fim:'Fimmtudagur',Fos:'Föstudagur'};
 var DAYNUM={Man:1,Tri:2,Mid:3,Fim:4,Fos:5};
@@ -485,7 +485,7 @@ document.addEventListener('DOMContentLoaded',function(){
       mRows=parseMenuRows(XLSX.utils.sheet_to_json(wb.Sheets['Grunnmatseðill'],{header:1,raw:false,defval:''}));
 
       // Lesa ofnæmismatseðil
-      ofnaemiRows=parseOfnaemismatsedil(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmisgögn'],{header:1,raw:false,defval:''}));
+      ofnaemiRows=parseOfnaemismatsedil(sheetRows(wb, wb.Sheets['Ofnæmisgögn'] ? 'Ofnæmisgögn' : 'Ofnæmismatseðill'));
 
       // Finna barn
       barnData=findBarn(wb,barnId);

@@ -102,7 +102,7 @@ tr:hover td{background:#f5f5f5;}
 </main>
 
 <script>
-var EXCEL_URL='https://johnbond87.github.io/matarstund/Matarstund_v12.xlsx';
+var EXCEL_URL='https://raw.githubusercontent.com/JohnBond87/matarstund/main/Matsedill.xlsx';
 var MONTHS=['janúar','febrúar','mars','apríl','maí','júní','júlí','ágúst','september','október','nóvember','desember'];
 var DNAME={Man:'Mánudagur',Tri:'Þriðjudagur',Mid:'Miðvikudagur',Fim:'Fimmtudagur',Fos:'Föstudagur'};
 
@@ -302,7 +302,7 @@ function loadAndInit(){
     .then(function(buf){
       var wb=XLSX.read(buf,{type:'array',cellDates:false,raw:false});
       mRows=parseMenuRows(XLSX.utils.sheet_to_json(wb.Sheets['Grunnmatseðill'],{header:1,raw:false,defval:''}));
-      ofnaemiRows=parseOfnaemismatsedil(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmisgögn'],{header:1,raw:false,defval:''}));
+      ofnaemiRows=parseOfnaemismatsedil(sheetRows(wb, wb.Sheets['Ofnæmisgögn'] ? 'Ofnæmisgögn' : 'Ofnæmismatseðill'));
 
       // Finna skólanafn
       var skolaNofn=[];

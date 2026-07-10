@@ -121,7 +121,7 @@ tr.gult td{background:#FFFDE7;}
 </main>
 
 <script>
-var EXCEL_URL='https://johnbond87.github.io/matarstund/Matarstund_v12.xlsx';
+var EXCEL_URL='https://raw.githubusercontent.com/JohnBond87/matarstund/main/Matsedill.xlsx';
 var ICON='https://cdn.shopify.com/s/files/1/0707/1458/9322/files/Matarstund_Icon_green_orange.svg?v=1754057827';
 var MONTHS=['janúar','febrúar','mars','apríl','maí','júní','júlí','ágúst','september','október','nóvember','desember'];
 var DNAME={Man:'Mánudagur',Tri:'Þriðjudagur',Mid:'Miðvikudagur',Fim:'Fimmtudagur',Fos:'Föstudagur'};
@@ -494,8 +494,10 @@ function load(){
       var msRows=XLSX.utils.sheet_to_json(wb.Sheets['Grunnmatseðill'],{header:1,raw:false,defval:''});
       mRows=parseMenuRows(msRows);
       leidMap=parseLeidMap(msRows);
-      ofnaemiHadegi=parseOfnaemiArray(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmisgögn'],{header:1,raw:false,defval:''}));
-      ofnaemiSidegi=parseOfnaemiSidegi(XLSX.utils.sheet_to_json(wb.Sheets['Ofnæmisgögn síðdegi'],{header:1,raw:false,defval:''}));
+      var _ofnWs=wb.Sheets['Ofnæmisgögn']||wb.Sheets['Ofnæmismatseðill'];
+      var _ofnSdWs=wb.Sheets['Ofnæmisgögn síðdegi']||wb.Sheets['Ofnæmismatseðill síðdegi'];
+      ofnaemiHadegi=parseOfnaemiArray(_ofnWs?XLSX.utils.sheet_to_json(_ofnWs,{header:1,raw:false,defval:''}):[]);
+      ofnaemiSidegi=parseOfnaemiSidegi(_ofnSdWs?XLSX.utils.sheet_to_json(_ofnSdWs,{header:1,raw:false,defval:''}):[]);
       var slList=parseSkólalisti(XLSX.utils.sheet_to_json(wb.Sheets['Skólalisti'],{header:1,raw:false,defval:''}));
 
       eldhusForskeyti='';
